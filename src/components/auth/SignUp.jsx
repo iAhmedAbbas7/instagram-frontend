@@ -3,12 +3,15 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "../ui/button";
+import useTitle from "@/hooks/useTitle";
 import { useNavigate } from "react-router-dom";
 import { USER_API_ENDPOINT } from "@/utils/constants";
 import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
 
 const SignUp = () => {
+  // USE TITLE HOOK
+  useTitle("Instagram - Sign Up");
   // NAVIGATION
   const navigate = useNavigate();
   // LOADING STATE
@@ -50,6 +53,8 @@ const SignUp = () => {
       );
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // NAVIGATING TO LOGIN PAGE
+        navigate("/login");
         // TOASTING SUCCESS MESSAGE
         toast.success(
           response?.data?.message ||

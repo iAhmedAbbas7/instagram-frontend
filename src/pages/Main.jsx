@@ -1,4 +1,5 @@
 // <= IMPORTS =>
+import useTitle from "@/hooks/useTitle";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import TXT from "../assets/images/INSTAGRAM-TXT.png";
@@ -6,6 +7,8 @@ import MICROSOFT from "../assets/images/MICROSOFT.png";
 import GOOGLE_PLAY from "../assets/images/GOOGLE-PLAY.png";
 
 const Main = () => {
+  // USE TITLE HOOK
+  useTitle("Instagram - Get Started");
   // NAVIGATION
   const navigate = useNavigate();
   return (
@@ -44,9 +47,7 @@ const Main = () => {
                 Terms & Conditions
               </span>
               <br /> &{" "}
-              <span span className="text-sky-300 cursor-pointer">
-                Cookie Policy
-              </span>
+              <span className="text-sky-300 cursor-pointer">Cookie Policy</span>
             </h6>
           </div>
           {/* GET APP SECTION */}
