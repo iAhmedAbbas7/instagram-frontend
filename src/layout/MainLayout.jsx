@@ -5,9 +5,9 @@ import LeftSidebar from "@/components/shared/LeftSidebar";
 const MainLayout = () => {
   return (
     <>
-      <>
+      <div>
         <LeftSidebar />
-      </>
+      </div>
       <Outlet />
     </>
   );
