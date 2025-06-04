@@ -72,7 +72,7 @@ const LeftSidebar = () => {
   return (
     <>
       {/* LEFT SIDEBAR MAIN WRAPPER */}
-      <section className="fixed top-0 left-0 z-[9999] bg-white overflow-hidden h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
+      <section className="fixed top-0 left-0 bg-white h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
         {/* LEFT SIDEBAR CONTENT WRAPPER */}
         <section className="flex flex-col items-center justify-between h-full">
           {/* LOGO */}
