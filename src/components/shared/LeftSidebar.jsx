@@ -1,8 +1,12 @@
 // <= IMPORTS =>
 import axios from "axios";
 import { toast } from "sonner";
+import { useState } from "react";
+import CreatePost from "../user/CreatePost";
 import { useNavigate } from "react-router-dom";
+import { clearAuthState } from "@/redux/authSlice";
 import { USER_API_ENDPOINT } from "@/utils/constants";
+import { useDispatch, useSelector } from "react-redux";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -16,29 +20,15 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-// SIDEBAR ITEMS
-const sidebarItems = [
-  { icon: <Home />, label: "Home" },
-  { icon: <Search />, label: "Search" },
-  { icon: <TrendingUp />, label: "Explore" },
-  { icon: <MessageCircle />, label: "Messages" },
-  { icon: <Heart />, label: "Notifications" },
-  { icon: <PlusSquare />, label: "Create" },
-  {
-    icon: (
-      <Avatar className="w-6 h-6">
-        <AvatarImage src="https://github.com/shadcn.png" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
-    ),
-    label: "Profile",
-  },
-  { icon: <LogOut />, label: "Logout" },
-];
-
 const LeftSidebar = () => {
+  // GETTING CURRENT USER CREDENTIALS
+  const { user } = useSelector((store) => store.auth);
   // NAVIGATION
   const navigate = useNavigate();
+  // DISPATCH
+  const dispatch = useDispatch();
+  // POST DIALOG STATE
+  const [showPostDialog, setShowPostDialog] = useState(false);
   // LOGOUT HANDLER
   const logoutHandler = async () => {
     try {
@@ -47,6 +37,8 @@ const LeftSidebar = () => {
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // CLEARING AUTH STATE
+        dispatch(clearAuthState());
         // NAVIGATING TO THE MAIN PAGE
         navigate("/");
         // TOASTING SUCCESS MESSAGE
@@ -59,6 +51,25 @@ const LeftSidebar = () => {
       toast.error(error?.response?.data?.message || "Failed to Logout!");
     }
   };
+  // SIDEBAR ITEMS
+  const sidebarItems = [
+    { icon: <Home />, label: "Home" },
+    { icon: <Search />, label: "Search" },
+    { icon: <TrendingUp />, label: "Explore" },
+    { icon: <MessageCircle />, label: "Messages" },
+    { icon: <Heart />, label: "Notifications" },
+    { icon: <PlusSquare />, label: "Create" },
+    {
+      icon: (
+        <Avatar className="w-6 h-6">
+          <AvatarImage src={user?.profilePhoto} />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+      ),
+      label: "Profile",
+    },
+    { icon: <LogOut />, label: "Logout" },
+  ];
   // SIDEBAR ITEM CLICK HANDLER
   const sidebarItemClickHandler = (label) => {
     // IF NO LABEL
@@ -68,11 +79,15 @@ const LeftSidebar = () => {
       logoutHandler();
       return;
     }
+    // IF CREATE IS CLICKED
+    else if (label === "Create") {
+      setShowPostDialog(true);
+    }
   };
   return (
     <>
       {/* LEFT SIDEBAR MAIN WRAPPER */}
-      <section className="fixed top-0 left-0 bg-white h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
+      <section className="fixed top-0 left-0 bg-gray-50 h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
         {/* LEFT SIDEBAR CONTENT WRAPPER */}
         <section className="flex flex-col items-center justify-between h-full">
           {/* LOGO */}
@@ -104,6 +119,8 @@ const LeftSidebar = () => {
             <span>More</span>
           </div>
         </section>
+        {/* POST DIALOG */}
+        <CreatePost open={showPostDialog} setOpen={setShowPostDialog} />
       </section>
     </>
   );

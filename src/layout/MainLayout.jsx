@@ -5,7 +5,7 @@ import LeftSidebar from "@/components/shared/LeftSidebar";
 const MainLayout = () => {
   return (
     <>
-      <div>
+      <div className="bg-gray-50">
         <LeftSidebar />
       </div>
       <Outlet />

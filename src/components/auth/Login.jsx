@@ -4,9 +4,11 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import useTitle from "@/hooks/useTitle";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/redux/authSlice";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogIn, User2, X } from "lucide-react";
 import { USER_API_ENDPOINT } from "@/utils/constants";
+import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
 
 const Login = () => {
@@ -14,6 +16,8 @@ const Login = () => {
   useTitle("Instagram - Login");
   // NAVIGATION
   const navigate = useNavigate();
+  // DISPATCH
+  const dispatch = useDispatch();
   // LOADING STATE
   const [loading, setLoading] = useState(false);
   // STATE MANAGEMENT
@@ -47,6 +51,8 @@ const Login = () => {
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // SETTING USER IN THE AUTH STATE
+        dispatch(setUser(response.data.user));
         // NAVIGATING TO HOMEPAGE
         navigate("/home");
         // TOASTING SUCCESS MESSAGE
