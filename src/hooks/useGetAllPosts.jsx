@@ -1,9 +1,8 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setPosts } from "@/redux/postSlice";
-import { POST_API_ENDPOINT } from "@/utils/constants";
+import axiosClient from "@/utils/axiosClient";
 
 const useGetAllPosts = () => {
   // DISPATCH
@@ -13,9 +12,7 @@ const useGetAllPosts = () => {
     // FETCHING ALL POSTS
     const fetchAllPosts = async () => {
       try {
-        const response = await axios.get(`${POST_API_ENDPOINT}/getAllPosts`, {
-          withCredentials: true,
-        });
+        const response = await axiosClient.get(`/post/getAllPosts`);
         // IF RESPONSE SUCCESS
         if (response.data.success) {
           // SETTING POSTS IN THE POSTS SLICE

@@ -3,6 +3,7 @@ import Main from "./pages/Main";
 import Home from "./pages/Home";
 import Login from "./components/auth/Login";
 import MainLayout from "./layout/MainLayout";
+import RootLayout from "./layout/RootLayout";
 import SignUp from "./components/auth/SignUp";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
@@ -21,7 +22,13 @@ const privateRoutes = {
 };
 
 // <= APP ROUTING =>
-const appRouter = createBrowserRouter([...publicRoutes, privateRoutes]);
+const appRouter = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [...publicRoutes, privateRoutes],
+  },
+]);
 
 const App = () => {
   return (

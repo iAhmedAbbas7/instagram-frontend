@@ -1,11 +1,10 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { toast } from "sonner";
 import { useState } from "react";
 import CreatePost from "../user/CreatePost";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { clearAuthState } from "@/redux/authSlice";
-import { USER_API_ENDPOINT } from "@/utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -32,9 +31,7 @@ const LeftSidebar = () => {
   // LOGOUT HANDLER
   const logoutHandler = async () => {
     try {
-      const response = await axios.get(`${USER_API_ENDPOINT}/logout`, {
-        withCredentials: true,
-      });
+      const response = await axiosClient.get(`/user/logout`);
       // IF RESPONSE SUCCESS
       if (response.data.success) {
         // CLEARING AUTH STATE

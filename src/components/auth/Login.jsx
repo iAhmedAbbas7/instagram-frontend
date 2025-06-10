@@ -1,13 +1,12 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import useTitle from "@/hooks/useTitle";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/authSlice";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { USER_API_ENDPOINT } from "@/utils/constants";
 import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
 
@@ -43,11 +42,10 @@ const Login = () => {
     try {
       // LOADING STATE
       setLoading(true);
-      const response = await axios.post(`${USER_API_ENDPOINT}/login`, input, {
+      const response = await axiosClient.post(`/user/login`, input, {
         headers: {
           "Content-Type": "application/json",
         },
-        withCredentials: true,
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {

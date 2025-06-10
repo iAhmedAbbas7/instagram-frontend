@@ -1,5 +1,4 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
@@ -7,15 +6,16 @@ import I1 from "../../assets/images/I1.jpg";
 import I2 from "../../assets/images/I2.jpg";
 import I3 from "../../assets/images/I3.jpg";
 import { setPosts } from "@/redux/postSlice";
+import axiosClient from "@/utils/axiosClient";
 import { getShortRelativeTime } from "@/utils/time";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaRegHeart } from "react-icons/fa6";
-import { POST_API_ENDPOINT } from "@/utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
   Bookmark,
+  Heart,
   Loader2,
   MessageCircle,
   MoreHorizontal,
@@ -38,6 +38,8 @@ const Post = ({ post }) => {
   const { posts } = useSelector((store) => store.post);
   // DISPATCH
   const dispatch = useDispatch();
+  // LIKES STATE FOR EACH POST
+  const [likes, setLikes] = useState([]);
   // LIKED POST STATE
   const [liked, setLiked] = useState(post?.likes?.includes(user?._id) || false);
   // POST LIKES STATE
@@ -50,6 +52,8 @@ const Post = ({ post }) => {
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // DELETE POST DIALOG STATE
   const [deletePostDialogOpen, setShowDeletePostDialogOpen] = useState(false);
+  // LIKES DIALOG STATE
+  const [likesDialogOpen, setLikesDialogOpen] = useState(false);
   // DELETE POST LOADING STATE
   const [deleteLoading, setDeleteLoading] = useState(false);
   // OWNER'S POST DIALOG ITEMS
@@ -82,6 +86,18 @@ const Post = ({ post }) => {
     setLiked(post?.likes?.includes(user._id));
     setPostLikes(post?.likes?.length);
   }, [user._id, post.likes]);
+  // FETCHING LIKES FOR THE POST ON RENDER
+  useEffect(() => {
+    const fetchPostLikes = async () => {
+      const response = await axiosClient.get(`/post/${post?._id}/likes`);
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // SETTING POST LIKES
+        setLikes(response.data.likes);
+      }
+    };
+    fetchPostLikes();
+  }, [post?._id]);
   // SETTING THE POST OWNER
   const isOwner = post?.author?._id === user._id;
   // SETTING MENU ITEMS ACCORDING TO THE LOGGED IN USER
@@ -115,8 +131,8 @@ const Post = ({ post }) => {
     // LOADING STATE
     setDeleteLoading(true);
     try {
-      const response = await axios.delete(
-        `${POST_API_ENDPOINT}/${post._id}/deletePost`,
+      const response = await axiosClient.delete(
+        `/post/${post._id}/deletePost`,
         { withCredentials: true }
       );
       // IF RESPONSE SUCCESS
@@ -146,26 +162,27 @@ const Post = ({ post }) => {
   const likeOrUnlikePostHandler = async () => {
     try {
       // MAKING REQUEST
-      const response = await axios.get(
-        `${POST_API_ENDPOINT}/likeOrUnlike/${post._id}`,
-        { withCredentials: true }
-      );
+      const response = await axiosClient.get(`/post/likeOrUnlike/${post._id}`, {
+        withCredentials: true,
+      });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // COMPUTING NEW LIKED FLAG
+        const newLiked = !liked;
         // CREATING UPDATED POST LIKES BASED ON ACTION
-        const updatedLikes = liked ? postLikes + 1 : postLikes - 1;
+        const updatedLikes = newLiked ? postLikes + 1 : postLikes - 1;
         // SETTING UPDATED LIKES
         setPostLikes(updatedLikes);
         // UPDATING LIKE STATE BASED ON PREVIOUS VALUE
-        setLiked(!liked);
+        setLiked(newLiked);
         // UPDATING THE POST LIKES IN THE POSTS STATE
         const updatedPosts = posts.map((p) =>
           p._id === post._id
             ? {
                 ...p,
-                likes: liked
-                  ? p.likes.filter((id) => id !== user?._id)
-                  : [...p.likes, user._id],
+                likes: newLiked
+                  ? [...p.likes, user._id]
+                  : p.likes.filter((id) => id !== user?._id),
               }
             : p
         );
@@ -490,11 +507,15 @@ const Post = ({ post }) => {
         </div>
       </div>
       {/* POST LIKES */}
-      <span className="w-full font-[600] mt-3">
+      <span
+        title="View Likes"
+        onClick={() => setLikesDialogOpen(true)}
+        className="w-full font-[600] mt-3 cursor-pointer"
+      >
         {post?.likes?.length} {post?.likes?.length === 1 ? "like" : "likes"}
       </span>
       {/* POST AUTHOR & DESCRIPTION */}
-      <div className="w-full  flex items-center gap-3">
+      <div className="w-full flex items-center gap-2">
         <span className="font-[600]">{post?.author?.fullName}</span>
         <span>{post?.caption}</span>
       </div>
@@ -508,11 +529,13 @@ const Post = ({ post }) => {
           : "No comments yet"}
       </span>
       {/* COMMENT DIALOG */}
-      <CommentDialog
-        post={post}
-        open={commentDialogOpen}
-        setOpen={setCommentDialogOpen}
-      />
+      <div>
+        <CommentDialog
+          post={post}
+          open={commentDialogOpen}
+          setOpen={setCommentDialogOpen}
+        />
+      </div>
       {/* ADD COMMENT */}
       <div className="w-full flex items-center justify-between mt-1 relative">
         <input
@@ -561,6 +584,260 @@ const Post = ({ post }) => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* LIKES DIALOG */}
+      <Dialog open={likesDialogOpen}>
+        <DialogContent
+          className="p-0 border-none outline-none focus-visible:ring-0 focus:outline-none rounded-sm"
+          onInteractOutside={() => setLikesDialogOpen(false)}
+        >
+          {/* DIALOG CONTENT WRAPPER */}
+          <div className="w-full flex items-center justify-start flex-col min-h-[70vh]">
+            {/* HEADER */}
+            <div className="w-full px-3 py-3 border-b-2 border-gray-200 rounded-t-sm">
+              <h1 className="text-center text-[1.2rem] font-[600]">Likes</h1>
+            </div>
+            {/* LIKES SECTION */}
+            <div className="w-full flex-1 px-5 py-4 overflow-y-auto">
+              {/* IF NO LIKES */}
+              {likes.length === 0 && (
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                  <Heart size={"40px"} className="text-red-500" />
+                  <span className="text-[1rem] text-gray-500">
+                    No likes yet
+                  </span>
+                </div>
+              )}
+              {/* IF LIKES AVAILABLE */}
+              {likes.map((user) => (
+                <div
+                  key={user._id}
+                  className="w-full flex items-center justify-between"
+                >
+                  {/* AVATAR & USERNAME */}
+                  <div className="flex items-center gap-3">
+                    {/* AVATAR */}
+                    <HoverCard className="relative">
+                      <HoverCardTrigger asChild>
+                        <Avatar
+                          className={`w-10 h-10 cursor-pointer ${
+                            user?.profilePhoto === ""
+                              ? "bg-gray-300"
+                              : "bg-none"
+                          } `}
+                        >
+                          <AvatarImage
+                            src={user?.profilePhoto}
+                            alt={user?.fullName}
+                          />
+                        </Avatar>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="absolute -left-4 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                        {/* HOVER CONTENT MAIN WRAPPER */}
+                        <div className="w-full flex flex-col items-center justify-center">
+                          {/* HEADER */}
+                          <div className="px-6 py-6 w-full flex items-center gap-3">
+                            {/* AVATAR */}
+                            <div>
+                              <Avatar
+                                className={`w-10 h-10 cursor-pointer ${
+                                  user?.profilePhoto === ""
+                                    ? "bg-gray-300"
+                                    : "bg-none"
+                                } `}
+                              >
+                                <AvatarImage
+                                  src={user?.profilePhoto}
+                                  alt={user?.fullName}
+                                />
+                              </Avatar>
+                            </div>
+                            {/* USER INFO */}
+                            <div className="flex flex-col items-start justify-center">
+                              <span className="flex items-center gap-2 font-[600] text-[1rem]">
+                                {user?.username}
+                              </span>
+                              <span className="text-gray-500 text-xs">
+                                {user?.fullName}
+                              </span>
+                            </div>
+                          </div>
+                          {/* PROFILE INFO */}
+                          <div className="w-full flex items-center justify-evenly pb-4">
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-[1.1rem] font-[600]">
+                                {user?.posts?.length}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                posts
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-[1.1rem] font-[600]">
+                                {user?.followers?.length}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                followers
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="text-[1.1rem] font-[600]">
+                                {user?.following?.length}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                following
+                              </span>
+                            </div>
+                          </div>
+                          {/* POSTS SECTION */}
+                          <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
+                            {hoverCardImages.map((img, index) => (
+                              <img
+                                key={index}
+                                src={img}
+                                alt="Hover Image"
+                                className="h-[8.19rem] object-cover aspect-square"
+                              />
+                            ))}
+                          </div>
+                          {/* FOLLOW & MESSAGE BUTTON */}
+                          <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
+                            <Button
+                              type="button"
+                              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                            >
+                              <UserPlus size={50} />
+                              Follow
+                            </Button>
+                            <Button
+                              type="button"
+                              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                            >
+                              <MessageCircle size={50} />
+                              Message
+                            </Button>
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                    {/* USERNAME */}
+                    <div className="flex flex-col items-start justify-center">
+                      <div className="flex items-center gap-2 font-[600] text-[0.9rem]">
+                        <HoverCard className="relative">
+                          <HoverCardTrigger asChild>
+                            <div className="flex flex-col">
+                              <span className="hover:text-gray-500 cursor-pointer">
+                                {user?.username}
+                              </span>
+                              <span className="text-gray-500 text-xs">
+                                {user?.fullName}
+                              </span>
+                            </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="absolute -left-8 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                            {/* HOVER CONTENT MAIN WRAPPER */}
+                            <div className="w-full flex flex-col items-center justify-center">
+                              {/* HEADER */}
+                              <div className="px-6 py-6 w-full flex items-center gap-3">
+                                {/* AVATAR */}
+                                <div>
+                                  <Avatar
+                                    className={`w-10 h-10 cursor-pointer ${
+                                      user?.profilePhoto === ""
+                                        ? "bg-gray-300"
+                                        : "bg-none"
+                                    } `}
+                                  >
+                                    <AvatarImage
+                                      src={user?.profilePhoto}
+                                      alt={user?.fullName}
+                                    />
+                                  </Avatar>
+                                </div>
+                                {/* USER INFO */}
+                                <div className="flex flex-col items-start justify-center">
+                                  <span className="flex items-center gap-2 font-[600] text-[1rem]">
+                                    {user?.username}
+                                  </span>
+                                  <span className="text-gray-500 text-xs">
+                                    {user?.fullName}
+                                  </span>
+                                </div>
+                              </div>
+                              {/* PROFILE INFO */}
+                              <div className="w-full flex items-center justify-evenly pb-4">
+                                <div className="flex flex-col items-center justify-center">
+                                  <span className="text-[1.1rem] font-[600]">
+                                    {user?.posts?.length}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    posts
+                                  </span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center">
+                                  <span className="text-[1.1rem] font-[600]">
+                                    {user?.followers?.length}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    followers
+                                  </span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center">
+                                  <span className="text-[1.1rem] font-[600]">
+                                    {user?.following?.length}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    following
+                                  </span>
+                                </div>
+                              </div>
+                              {/* POSTS SECTION */}
+                              <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
+                                {hoverCardImages.map((img, index) => (
+                                  <img
+                                    key={index}
+                                    src={img}
+                                    alt="Hover Image"
+                                    className="h-[8.19rem] object-cover aspect-square"
+                                  />
+                                ))}
+                              </div>
+                              {/* FOLLOW & MESSAGE BUTTON */}
+                              <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
+                                <Button
+                                  type="button"
+                                  className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                                >
+                                  <UserPlus size={50} />
+                                  Follow
+                                </Button>
+                                <Button
+                                  type="button"
+                                  className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                                >
+                                  <MessageCircle size={50} />
+                                  Message
+                                </Button>
+                              </div>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </div>
+                    </div>
+                  </div>
+                  {/* FOLLOW BUTTON */}
+                  <Button
+                    type="button"
+                    className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer"
+                  >
+                    <UserPlus size={50} />
+                    Follow
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
         </DialogContent>

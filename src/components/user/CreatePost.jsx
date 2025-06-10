@@ -1,11 +1,10 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { useRef, useState } from "react";
 import { setPosts } from "@/redux/postSlice";
+import axiosClient from "@/utils/axiosClient";
 import { Dialog, DialogContent } from "../ui/dialog";
-import { POST_API_ENDPOINT } from "@/utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { getImageDataURI } from "@/utils/getImageDataURI";
 import { Image, Loader2, PlusSquareIcon, X } from "lucide-react";
@@ -50,16 +49,11 @@ const CreatePost = ({ open, setOpen }) => {
     setLoading(true);
     // MAKING REQUEST
     try {
-      const response = await axios.post(
-        `${POST_API_ENDPOINT}/addPost`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await axiosClient.post(`/post/addPost`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       //  IF RESPONSE SUCCESS
       if (response.data.success) {
         // DISPATCHING NEW POST TO THE PASTS ARRAY

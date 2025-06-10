@@ -1,11 +1,10 @@
 // <= IMPORTS =>
-import axios from "axios";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import useTitle from "@/hooks/useTitle";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { USER_API_ENDPOINT } from "@/utils/constants";
 import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
 
@@ -41,16 +40,11 @@ const SignUp = () => {
     try {
       // LOADING STATE
       setLoading(true);
-      const response = await axios.post(
-        `${USER_API_ENDPOINT}/register`,
-        input,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await axiosClient.post(`/user/register`, input, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
         // NAVIGATING TO LOGIN PAGE
