@@ -41,18 +41,24 @@ const Post = ({ post }) => {
   const dispatch = useDispatch();
   // LIKES STATE FOR EACH POST
   const [likes, setLikes] = useState([]);
+  // COMMENT STATE
+  const [comment, setComment] = useState("");
   // LIKES LOADING STATE
   const [likesLoading, setLikesLoading] = useState(false);
+  // COMMENT POSTING LOADING STATE
+  const [postCommentLoading, setPostCommentLoading] = useState(false);
   // LIKE ANIMATION STATE
   const [showAnimation, setShowAnimation] = useState(false);
   // LIKED POST STATE
   const [liked, setLiked] = useState(post?.likes?.includes(user?._id) || false);
   // POST LIKES STATE
   const [postLikes, setPostLikes] = useState(post?.likes?.length);
+  // POST COMMENTS STATE
+  const [postComments, setPostComments] = useState(post?.comments);
+  // POST COMMENTS COUNT STATE
+  const [commentsLength, setCommentsLength] = useState(post?.comments?.length);
   // POST DIALOG STATE
   const [showPostDialog, setShowPostDialog] = useState(false);
-  // COMMENT STATE
-  const [comment, setComment] = useState("");
   // COMMENT DIALOG STATE
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // DELETE POST DIALOG STATE
@@ -86,11 +92,13 @@ const Post = ({ post }) => {
     { id: 8, label: "About this Account" },
     { id: 9, label: "Cancel" },
   ];
-  // SYNCHRONIZING THE POST LIKES
+  // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
   useEffect(() => {
     setLiked(post?.likes?.includes(user._id));
     setPostLikes(post?.likes?.length);
-  }, [user._id, post.likes]);
+    setCommentsLength(post?.comments?.length);
+    setPostComments(post?.comments);
+  }, [user._id, post.likes, post?.comments?.length, post?.comments]);
   // FETCHING LIKES FOR THE POST ON RENDER
   useEffect(() => {
     const fetchPostLikes = async () => {
@@ -256,6 +264,53 @@ const Post = ({ post }) => {
     }
     // LIKE OR UNLIKE POST HANDLER FUNCTION
     likeOrUnlikePostHandler();
+  };
+  // POST COMMENT HANDLER
+  const postCommentHandler = async () => {
+    // POST COMMENT LOADING STATE
+    setPostCommentLoading(true);
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.post(
+        `/post/${post._id}/postComment`,
+        { text: comment },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // CREATING UPDATED COMMENTS DATA
+        const updatedCommentsData = [response.data.comment, ...postComments];
+        // SETTING THE UPDATED COMMENTS DATA
+        setPostComments(updatedCommentsData);
+        // CREATING UPDATED POST DATA
+        const updatedPostData = posts.map((p) =>
+          p._id === post?._id
+            ? {
+                ...p,
+                comments: updatedCommentsData,
+              }
+            : p
+        );
+        // SETTING THE UPDATED POST DATA
+        dispatch(setPosts(updatedPostData));
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response?.data?.message);
+        // CLEARING THE COMMENT INPUT
+        setComment("");
+      }
+    } catch (error) {
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Post Comment!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Post Comment!");
+    } finally {
+      // POST COMMENT LOADING STATE
+      setPostCommentLoading(false);
+    }
   };
   return (
     <div className="mb-6 mx-auto max-w-xl">
@@ -586,9 +641,9 @@ const Post = ({ post }) => {
         onClick={() => setCommentDialogOpen(true)}
         className="text-[0.975rem] text-gray-500 hover:text-gray-600 cursor-pointer"
       >
-        {post?.comments.length > 0
-          ? `View all ${post?.comments?.length} comments`
-          : "No comments yet"}
+        {commentsLength === 0 && "No comments yet"}
+        {commentsLength === 1 && "View comment"}
+        {commentsLength > 1 && `View all ${commentsLength} comments`}
       </span>
       {/* COMMENT DIALOG */}
       <div>
@@ -607,11 +662,20 @@ const Post = ({ post }) => {
           name="comment"
           id="comment"
           placeholder="Add a comment..."
-          className="w-full border-b border-gray-300 focus:outline-none outline-none pr-4 text-gray-500 pb-3 text-sm placeholder:text-gray-600"
+          spellCheck="false"
+          autoComplete="off"
+          className="w-full border-b border-gray-300 focus:outline-none outline-none pr-4 text-gray-700 pb-3 text-sm placeholder:text-gray-700"
         />
         {comment && (
-          <span className="absolute right-0 text-sky-500 font-[600] pb-3 text-sm cursor-pointer">
-            Post
+          <span
+            onClick={postCommentHandler}
+            className="absolute right-0 text-sky-500 font-[600] pb-3 text-sm cursor-pointer"
+          >
+            {postCommentLoading ? (
+              <Loader2 size={"20px"} className="animate-spin" />
+            ) : (
+              "Post"
+            )}
           </span>
         )}
       </div>
