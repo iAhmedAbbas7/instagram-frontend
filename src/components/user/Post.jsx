@@ -11,6 +11,7 @@ import { getShortRelativeTime } from "@/utils/time";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaRegHeart } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
+import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
@@ -40,6 +41,10 @@ const Post = ({ post }) => {
   const dispatch = useDispatch();
   // LIKES STATE FOR EACH POST
   const [likes, setLikes] = useState([]);
+  // LIKES LOADING STATE
+  const [likesLoading, setLikesLoading] = useState(false);
+  // LIKE ANIMATION STATE
+  const [showAnimation, setShowAnimation] = useState(false);
   // LIKED POST STATE
   const [liked, setLiked] = useState(post?.likes?.includes(user?._id) || false);
   // POST LIKES STATE
@@ -89,11 +94,21 @@ const Post = ({ post }) => {
   // FETCHING LIKES FOR THE POST ON RENDER
   useEffect(() => {
     const fetchPostLikes = async () => {
-      const response = await axiosClient.get(`/post/${post?._id}/likes`);
-      // IF RESPONSE SUCCESS
-      if (response.data.success) {
-        // SETTING POST LIKES
-        setLikes(response.data.likes);
+      // LIKES LOADING STATE
+      setLikesLoading(true);
+      try {
+        const response = await axiosClient.get(`/post/${post?._id}/likes`);
+        // IF RESPONSE SUCCESS
+        if (response.data.success) {
+          // SETTING POST LIKES
+          setLikes(response.data.likes);
+        }
+      } catch (error) {
+        // LOGGING ERROR MESSAGE
+        console.log(error);
+      } finally {
+        // LIKES LOADING STATE
+        setLikesLoading(false);
       }
     };
     fetchPostLikes();
@@ -160,38 +175,57 @@ const Post = ({ post }) => {
   };
   // LIKE OR UNLIKE POST HANDLER
   const likeOrUnlikePostHandler = async () => {
+    // SNAPSHOT OF ORIGINAL POSTS
+    const originalPosts = [...posts];
+    // SNAPSHOT OF LIKED STATE
+    const originalLiked = liked;
+    // SNAPSHOT OF ORIGINAL LIKES COUNT
+    const originalLikes = postLikes;
+    // OPTIMISTICALLY UPDATING LIKE STATE
+    const newLiked = !originalLiked;
+    // OPTIMISTICALLY UPDATING LIKES COUNT
+    newLiked ? originalLikes + 1 : originalLikes - 1;
+    // UPDATING THE POST LIKES
+    const updatedPosts = posts.map((p) =>
+      p._id === post._id
+        ? {
+            ...p,
+            likes: newLiked
+              ? [...p.likes, user._id]
+              : p.likes.filter((id) => id !== user?._id),
+          }
+        : p
+    );
+    // SETTING UPDATED POSTS
+    dispatch(setPosts(updatedPosts));
     try {
+      // LIKES LOADING STATE
+      setLikesLoading(true);
       // MAKING REQUEST
       const response = await axiosClient.get(`/post/likeOrUnlike/${post._id}`, {
         withCredentials: true,
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
-        // COMPUTING NEW LIKED FLAG
-        const newLiked = !liked;
-        // CREATING UPDATED POST LIKES BASED ON ACTION
-        const updatedLikes = newLiked ? postLikes + 1 : postLikes - 1;
-        // SETTING UPDATED LIKES
-        setPostLikes(updatedLikes);
-        // UPDATING LIKE STATE BASED ON PREVIOUS VALUE
-        setLiked(newLiked);
-        // UPDATING THE POST LIKES IN THE POSTS STATE
-        const updatedPosts = posts.map((p) =>
-          p._id === post._id
-            ? {
-                ...p,
-                likes: newLiked
-                  ? [...p.likes, user._id]
-                  : p.likes.filter((id) => id !== user?._id),
-              }
-            : p
-        );
-        // SETTING UPDATED POSTS
-        dispatch(setPosts(updatedPosts));
-        // TOASTING SUCCESS MESSAGE
-        toast.success(response.data.message);
+        // REFETCHING THE LIKES FOR THE POST
+        try {
+          const response = await axiosClient.get(`/post/${post?._id}/likes`);
+          // IF RESPONSE SUCCESS
+          if (response.data.success) {
+            // SETTING POST LIKES
+            setLikes(response.data.likes);
+          }
+        } catch (error) {
+          // LOGGING ERROR MESSAGE
+          console.log(error);
+        } finally {
+          // LIKES LOADING STATE
+          setLikesLoading(false);
+        }
       }
     } catch (error) {
+      // REVERTING CHANGES TO ORIGINAL ON ERROR
+      dispatch(setPosts(originalPosts));
       // LOGGING ERROR MESSAGE
       console.error("Failed to Perform Action!", error);
       // TOASTING ERROR MESSAGE
@@ -212,6 +246,16 @@ const Post = ({ post }) => {
     else if (label === "Delete") {
       setShowDeletePostDialogOpen(true);
     }
+  };
+  // ON LIKE ANIMATION HANDLER
+  const onLikeAnimationHandler = () => {
+    // IF POST IS NOT ALREADY LIKED
+    if (!liked) {
+      setShowAnimation(true);
+      setTimeout(() => setShowAnimation(false), 800);
+    }
+    // LIKE OR UNLIKE POST HANDLER FUNCTION
+    likeOrUnlikePostHandler();
   };
   return (
     <div className="mb-6 mx-auto max-w-xl">
@@ -458,12 +502,30 @@ const Post = ({ post }) => {
         </div>
       </div>
       {/* POST IMAGE */}
-      <div className="w-full h-full mt-1">
+      <div
+        onDoubleClick={() => {
+          if (!liked) onLikeAnimationHandler();
+        }}
+        className="w-full h-full mt-1 cursor-pointer relative"
+      >
         <img
           src={post?.image}
           alt="Post Image"
           className="w-full h-full object-cover rounded-sm"
         />
+        <AnimatePresence>
+          {showAnimation && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.4, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <FaHeart size={80} className="text-white drop-shadow-lg" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       {/* POST ACTIONS */}
       <div className="w-full flex items-center justify-between mt-2">
@@ -471,7 +533,7 @@ const Post = ({ post }) => {
           {/* LIKE */}
           <span
             title={liked ? "Unlike" : "Like"}
-            onClick={likeOrUnlikePostHandler}
+            onClick={onLikeAnimationHandler}
           >
             {liked ? (
               <FaHeart size={"28px"} className="text-red-500 cursor-pointer" />
@@ -601,9 +663,18 @@ const Post = ({ post }) => {
               <h1 className="text-center text-[1.2rem] font-[600]">Likes</h1>
             </div>
             {/* LIKES SECTION */}
-            <div className="w-full flex-1 px-5 py-4 overflow-y-auto">
+            <div className="w-full flex flex-1 flex-col gap-3 px-5 py-4 overflow-y-auto">
+              {/* LOADING STATE */}
+              {likesLoading && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Loader2
+                    size={"40px"}
+                    className="text-gray-500 animate-spin"
+                  />
+                </div>
+              )}
               {/* IF NO LIKES */}
-              {likes.length === 0 && (
+              {!likesLoading && likes.length === 0 && (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <Heart size={"40px"} className="text-red-500" />
                   <span className="text-[1rem] text-gray-500">
@@ -612,232 +683,233 @@ const Post = ({ post }) => {
                 </div>
               )}
               {/* IF LIKES AVAILABLE */}
-              {likes.map((user) => (
-                <div
-                  key={user._id}
-                  className="w-full flex items-center justify-between"
-                >
-                  {/* AVATAR & USERNAME */}
-                  <div className="flex items-center gap-3">
-                    {/* AVATAR */}
-                    <HoverCard className="relative">
-                      <HoverCardTrigger asChild>
-                        <Avatar
-                          className={`w-10 h-10 cursor-pointer ${
-                            user?.profilePhoto === ""
-                              ? "bg-gray-300"
-                              : "bg-none"
-                          } `}
-                        >
-                          <AvatarImage
-                            src={user?.profilePhoto}
-                            alt={user?.fullName}
-                          />
-                        </Avatar>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="absolute -left-4 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                        {/* HOVER CONTENT MAIN WRAPPER */}
-                        <div className="w-full flex flex-col items-center justify-center">
-                          {/* HEADER */}
-                          <div className="px-6 py-6 w-full flex items-center gap-3">
-                            {/* AVATAR */}
-                            <div>
-                              <Avatar
-                                className={`w-10 h-10 cursor-pointer ${
-                                  user?.profilePhoto === ""
-                                    ? "bg-gray-300"
-                                    : "bg-none"
-                                } `}
-                              >
-                                <AvatarImage
-                                  src={user?.profilePhoto}
-                                  alt={user?.fullName}
-                                />
-                              </Avatar>
-                            </div>
-                            {/* USER INFO */}
-                            <div className="flex flex-col items-start justify-center">
-                              <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                                {user?.username}
-                              </span>
-                              <span className="text-gray-500 text-xs">
-                                {user?.fullName}
-                              </span>
-                            </div>
-                          </div>
-                          {/* PROFILE INFO */}
-                          <div className="w-full flex items-center justify-evenly pb-4">
-                            <div className="flex flex-col items-center justify-center">
-                              <span className="text-[1.1rem] font-[600]">
-                                {user?.posts?.length}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                posts
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center">
-                              <span className="text-[1.1rem] font-[600]">
-                                {user?.followers?.length}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                followers
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center">
-                              <span className="text-[1.1rem] font-[600]">
-                                {user?.following?.length}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                following
-                              </span>
-                            </div>
-                          </div>
-                          {/* POSTS SECTION */}
-                          <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                            {hoverCardImages.map((img, index) => (
-                              <img
-                                key={index}
-                                src={img}
-                                alt="Hover Image"
-                                className="h-[8.19rem] object-cover aspect-square"
-                              />
-                            ))}
-                          </div>
-                          {/* FOLLOW & MESSAGE BUTTON */}
-                          <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                            <Button
-                              type="button"
-                              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                            >
-                              <UserPlus size={50} />
-                              Follow
-                            </Button>
-                            <Button
-                              type="button"
-                              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                            >
-                              <MessageCircle size={50} />
-                              Message
-                            </Button>
-                          </div>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                    {/* USERNAME */}
-                    <div className="flex flex-col items-start justify-center">
-                      <div className="flex items-center gap-2 font-[600] text-[0.9rem]">
-                        <HoverCard className="relative">
-                          <HoverCardTrigger asChild>
-                            <div className="flex flex-col">
-                              <span className="hover:text-gray-500 cursor-pointer">
-                                {user?.username}
-                              </span>
-                              <span className="text-gray-500 text-xs">
-                                {user?.fullName}
-                              </span>
-                            </div>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="absolute -left-8 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                            {/* HOVER CONTENT MAIN WRAPPER */}
-                            <div className="w-full flex flex-col items-center justify-center">
-                              {/* HEADER */}
-                              <div className="px-6 py-6 w-full flex items-center gap-3">
-                                {/* AVATAR */}
-                                <div>
-                                  <Avatar
-                                    className={`w-10 h-10 cursor-pointer ${
-                                      user?.profilePhoto === ""
-                                        ? "bg-gray-300"
-                                        : "bg-none"
-                                    } `}
-                                  >
-                                    <AvatarImage
-                                      src={user?.profilePhoto}
-                                      alt={user?.fullName}
-                                    />
-                                  </Avatar>
-                                </div>
-                                {/* USER INFO */}
-                                <div className="flex flex-col items-start justify-center">
-                                  <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                                    {user?.username}
-                                  </span>
-                                  <span className="text-gray-500 text-xs">
-                                    {user?.fullName}
-                                  </span>
-                                </div>
-                              </div>
-                              {/* PROFILE INFO */}
-                              <div className="w-full flex items-center justify-evenly pb-4">
-                                <div className="flex flex-col items-center justify-center">
-                                  <span className="text-[1.1rem] font-[600]">
-                                    {user?.posts?.length}
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    posts
-                                  </span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center">
-                                  <span className="text-[1.1rem] font-[600]">
-                                    {user?.followers?.length}
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    followers
-                                  </span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center">
-                                  <span className="text-[1.1rem] font-[600]">
-                                    {user?.following?.length}
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    following
-                                  </span>
-                                </div>
-                              </div>
-                              {/* POSTS SECTION */}
-                              <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                                {hoverCardImages.map((img, index) => (
-                                  <img
-                                    key={index}
-                                    src={img}
-                                    alt="Hover Image"
-                                    className="h-[8.19rem] object-cover aspect-square"
+              {!likesLoading &&
+                likes.map((user) => (
+                  <div
+                    key={user._id}
+                    className="w-full flex items-center justify-between"
+                  >
+                    {/* AVATAR & USERNAME */}
+                    <div className="flex items-center gap-3">
+                      {/* AVATAR */}
+                      <HoverCard className="relative">
+                        <HoverCardTrigger asChild>
+                          <Avatar
+                            className={`w-10 h-10 cursor-pointer ${
+                              user?.profilePhoto === ""
+                                ? "bg-gray-300"
+                                : "bg-none"
+                            } `}
+                          >
+                            <AvatarImage
+                              src={user?.profilePhoto}
+                              alt={user?.fullName}
+                            />
+                          </Avatar>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="absolute -left-4 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                          {/* HOVER CONTENT MAIN WRAPPER */}
+                          <div className="w-full flex flex-col items-center justify-center">
+                            {/* HEADER */}
+                            <div className="px-6 py-6 w-full flex items-center gap-3">
+                              {/* AVATAR */}
+                              <div>
+                                <Avatar
+                                  className={`w-10 h-10 cursor-pointer ${
+                                    user?.profilePhoto === ""
+                                      ? "bg-gray-300"
+                                      : "bg-none"
+                                  } `}
+                                >
+                                  <AvatarImage
+                                    src={user?.profilePhoto}
+                                    alt={user?.fullName}
                                   />
-                                ))}
+                                </Avatar>
                               </div>
-                              {/* FOLLOW & MESSAGE BUTTON */}
-                              <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                                <Button
-                                  type="button"
-                                  className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                >
-                                  <UserPlus size={50} />
-                                  Follow
-                                </Button>
-                                <Button
-                                  type="button"
-                                  className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                >
-                                  <MessageCircle size={50} />
-                                  Message
-                                </Button>
+                              {/* USER INFO */}
+                              <div className="flex flex-col items-start justify-center">
+                                <span className="flex items-center gap-2 font-[600] text-[1rem]">
+                                  {user?.username}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {user?.fullName}
+                                </span>
                               </div>
                             </div>
-                          </HoverCardContent>
-                        </HoverCard>
+                            {/* PROFILE INFO */}
+                            <div className="w-full flex items-center justify-evenly pb-4">
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="text-[1.1rem] font-[600]">
+                                  {user?.posts?.length}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  posts
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="text-[1.1rem] font-[600]">
+                                  {user?.followers?.length}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  followers
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="text-[1.1rem] font-[600]">
+                                  {user?.following?.length}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  following
+                                </span>
+                              </div>
+                            </div>
+                            {/* POSTS SECTION */}
+                            <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
+                              {hoverCardImages.map((img, index) => (
+                                <img
+                                  key={index}
+                                  src={img}
+                                  alt="Hover Image"
+                                  className="h-[8.19rem] object-cover aspect-square"
+                                />
+                              ))}
+                            </div>
+                            {/* FOLLOW & MESSAGE BUTTON */}
+                            <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
+                              <Button
+                                type="button"
+                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                              >
+                                <UserPlus size={50} />
+                                Follow
+                              </Button>
+                              <Button
+                                type="button"
+                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                              >
+                                <MessageCircle size={50} />
+                                Message
+                              </Button>
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                      {/* USERNAME */}
+                      <div className="flex flex-col items-start justify-center">
+                        <div className="flex items-center gap-2 font-[600] text-[0.9rem]">
+                          <HoverCard className="relative">
+                            <HoverCardTrigger asChild>
+                              <div className="flex flex-col">
+                                <span className="hover:text-gray-500 cursor-pointer">
+                                  {user?.username}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {user?.fullName}
+                                </span>
+                              </div>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="absolute -left-9.5 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                              {/* HOVER CONTENT MAIN WRAPPER */}
+                              <div className="w-full flex flex-col items-center justify-center">
+                                {/* HEADER */}
+                                <div className="px-6 py-6 w-full flex items-center gap-3">
+                                  {/* AVATAR */}
+                                  <div>
+                                    <Avatar
+                                      className={`w-10 h-10 cursor-pointer ${
+                                        user?.profilePhoto === ""
+                                          ? "bg-gray-300"
+                                          : "bg-none"
+                                      } `}
+                                    >
+                                      <AvatarImage
+                                        src={user?.profilePhoto}
+                                        alt={user?.fullName}
+                                      />
+                                    </Avatar>
+                                  </div>
+                                  {/* USER INFO */}
+                                  <div className="flex flex-col items-start justify-center">
+                                    <span className="flex items-center gap-2 font-[600] text-[1rem]">
+                                      {user?.username}
+                                    </span>
+                                    <span className="text-gray-500 text-xs">
+                                      {user?.fullName}
+                                    </span>
+                                  </div>
+                                </div>
+                                {/* PROFILE INFO */}
+                                <div className="w-full flex items-center justify-evenly pb-4">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-[1.1rem] font-[600]">
+                                      {user?.posts?.length}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      posts
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-[1.1rem] font-[600]">
+                                      {user?.followers?.length}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      followers
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-[1.1rem] font-[600]">
+                                      {user?.following?.length}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      following
+                                    </span>
+                                  </div>
+                                </div>
+                                {/* POSTS SECTION */}
+                                <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
+                                  {hoverCardImages.map((img, index) => (
+                                    <img
+                                      key={index}
+                                      src={img}
+                                      alt="Hover Image"
+                                      className="h-[8.19rem] object-cover aspect-square"
+                                    />
+                                  ))}
+                                </div>
+                                {/* FOLLOW & MESSAGE BUTTON */}
+                                <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
+                                  <Button
+                                    type="button"
+                                    className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                                  >
+                                    <UserPlus size={50} />
+                                    Follow
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
+                                  >
+                                    <MessageCircle size={50} />
+                                    Message
+                                  </Button>
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
                       </div>
                     </div>
+                    {/* FOLLOW BUTTON */}
+                    <Button
+                      type="button"
+                      className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer focus-visible:ring-0"
+                    >
+                      <UserPlus size={50} />
+                      Follow
+                    </Button>
                   </div>
-                  {/* FOLLOW BUTTON */}
-                  <Button
-                    type="button"
-                    className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer"
-                  >
-                    <UserPlus size={50} />
-                    Follow
-                  </Button>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </DialogContent>
