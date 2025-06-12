@@ -92,13 +92,6 @@ const Post = ({ post }) => {
     { id: 8, label: "About this Account" },
     { id: 9, label: "Cancel" },
   ];
-  // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
-  useEffect(() => {
-    setLiked(post?.likes?.includes(user._id));
-    setPostLikes(post?.likes?.length);
-    setCommentsLength(post?.comments?.length);
-    setPostComments(post?.comments);
-  }, [user._id, post.likes, post?.comments?.length, post?.comments]);
   // FETCHING LIKES FOR THE POST ON RENDER
   useEffect(() => {
     const fetchPostLikes = async () => {
@@ -120,7 +113,14 @@ const Post = ({ post }) => {
       }
     };
     fetchPostLikes();
-  }, [post?._id]);
+  }, [post?._id, commentDialogOpen]);
+  // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
+  useEffect(() => {
+    setPostComments(post?.comments);
+    setPostLikes(post?.likes?.length);
+    setLiked(post?.likes?.includes(user._id));
+    setCommentsLength(post?.comments?.length);
+  }, [user._id, post.likes, post?.comments?.length, post?.comments]);
   // SETTING THE POST OWNER
   const isOwner = post?.author?._id === user._id;
   // SETTING MENU ITEMS ACCORDING TO THE LOGGED IN USER
