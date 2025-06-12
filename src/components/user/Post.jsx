@@ -633,8 +633,10 @@ const Post = ({ post }) => {
       </span>
       {/* POST AUTHOR & DESCRIPTION */}
       <div className="w-full flex items-center gap-2">
-        <span className="font-[600]">{post?.author?.fullName}</span>
-        <span>{post?.caption}</span>
+        <span className="font-[600]">
+          {post?.author?.fullName}{" "}
+          <span className="font-normal ml-2">{post?.caption}</span>
+        </span>
       </div>
       {/* VIEW COMMENTS */}
       <span
@@ -664,7 +666,7 @@ const Post = ({ post }) => {
           placeholder="Add a comment..."
           spellCheck="false"
           autoComplete="off"
-          className="w-full border-b border-gray-300 focus:outline-none outline-none pr-4 text-gray-700 pb-3 text-sm placeholder:text-gray-700"
+          className="w-full border-b border-gray-300 focus:outline-none outline-none pr-10 text-gray-700 pb-3 text-sm placeholder:text-gray-700"
         />
         {comment && (
           <span

@@ -28,6 +28,7 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { AnimatePresence, motion } from "framer-motion";
+import Comment from "../user/Comment";
 
 // <= HOVER CARD IMAGES =>
 const hoverCardImages = [I1, I2, I3];
@@ -595,14 +596,39 @@ const CommentDialog = ({ post, open, setOpen }) => {
                 </div>
               </div>
               {/* COMMENTS AREA */}
-              <div className="w-full py-5 px-4">
-                {post?.comments?.length <= 0 && (
+              <div className="flex-1 w-full h-full py-4 px-4 flex flex-col gap-5 items-start justify-start overflow-y-auto">
+                {/* POST AUTHOR AVATAR & CAPTION */}
+                <div className="w-full flex items-center gap-3">
+                  <Avatar
+                    className={`w-10 h-10 cursor-pointer ${
+                      post?.author?.profilePhoto === ""
+                        ? "bg-gray-300"
+                        : "bg-none"
+                    } `}
+                  >
+                    <AvatarImage
+                      src={post?.author?.profilePhoto}
+                      alt={post?.author?.fullName}
+                    />
+                    <AvatarFallback>{fullNameInitials}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-[600] text-[0.9rem]">
+                    {post?.author?.username}
+                    <span className="font-normal ml-3">{post?.caption}</span>
+                  </span>
+                </div>
+                {/* IF NO COMMENTS */}
+                {postComments.length <= 0 && (
                   <div className="flex items-center justify-center h-full w-full">
                     <span className="text-gray-500 text-sm">
                       No comments yet. Be the first to comment!
                     </span>
                   </div>
                 )}
+                {/* IF COMMENTS AVAILABLE */}
+                {postComments.map((comment) => (
+                  <Comment key={comment._id} comment={comment} />
+                ))}
               </div>
               {/* SECTION FOOTERS */}
               <div className="w-full flex flex-col items-center justify-center">
@@ -683,12 +709,12 @@ const CommentDialog = ({ post, open, setOpen }) => {
                     placeholder="Add a comment..."
                     spellCheck="false"
                     autoComplete="off"
-                    className="border-none outline-none focus:outline-none text-sm placeholder:text-gray-700 text-gray-700"
+                    className="w-full border-none outline-none focus:outline-none text-sm placeholder:text-gray-700 text-gray-700 pr-10"
                   />
                   {comment && (
                     <span
                       onClick={postCommentHandler}
-                      className="absolute right-4 text-sky-500 font-[600] pb-3 text-sm cursor-pointer"
+                      className="absolute right-4 text-sky-500 font-[600] bottom-3 text-sm cursor-pointer"
                     >
                       {postCommentLoading ? (
                         <Loader2 size={"20px"} className="animate-spin" />
