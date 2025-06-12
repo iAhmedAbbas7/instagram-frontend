@@ -359,7 +359,7 @@ const CommentDialog = ({ post, open, setOpen }) => {
                 {/* AVATAR & USERNAME */}
                 <div className="flex items-center gap-3">
                   {/* AVATAR */}
-                  <HoverCard className="relative">
+                  <HoverCard>
                     <HoverCardTrigger asChild>
                       <Avatar
                         className={`w-10 h-10 cursor-pointer ${
@@ -375,7 +375,7 @@ const CommentDialog = ({ post, open, setOpen }) => {
                         <AvatarFallback>{fullNameInitials}</AvatarFallback>
                       </Avatar>
                     </HoverCardTrigger>
-                    <HoverCardContent className="absolute -left-4 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                    <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
                       {/* HOVER CONTENT MAIN WRAPPER */}
                       <div className="w-full flex flex-col items-center justify-center">
                         {/* HEADER */}
@@ -467,13 +467,13 @@ const CommentDialog = ({ post, open, setOpen }) => {
                   {/* USERNAME */}
                   <div className="flex flex-col items-start justify-center">
                     <span className="flex items-center gap-2 font-[600] text-[0.9rem]">
-                      <HoverCard className="relative">
+                      <HoverCard>
                         <HoverCardTrigger asChild>
                           <span className="hover:text-gray-500 cursor-pointer">
                             {post?.author?.username}
                           </span>
                         </HoverCardTrigger>
-                        <HoverCardContent className="absolute -left-8 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
+                        <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
                           {/* HOVER CONTENT MAIN WRAPPER */}
                           <div className="w-full flex flex-col items-center justify-center">
                             {/* HEADER */}
