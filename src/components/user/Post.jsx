@@ -1,7 +1,6 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
 import I1 from "../../assets/images/I1.jpg";
 import I2 from "../../assets/images/I2.jpg";
 import I3 from "../../assets/images/I3.jpg";
@@ -11,6 +10,7 @@ import { getShortRelativeTime } from "@/utils/time";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaRegHeart } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
+import { forwardRef, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
@@ -32,7 +32,7 @@ import {
 // <= HOVER CARD IMAGES =>
 const hoverCardImages = [I1, I2, I3];
 
-const Post = ({ post }) => {
+const Post = forwardRef(({ post }, ref) => {
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // GETTING POSTS FROM THE POST SLICE
@@ -313,7 +313,7 @@ const Post = ({ post }) => {
     }
   };
   return (
-    <div className="mb-6 mx-auto max-w-xl">
+    <div ref={ref} className="mb-6 mx-auto max-w-xl">
       {/* POST HEADER */}
       <div className="w-full flex items-center justify-between">
         {/* AVATAR & USERNAME */}
@@ -982,6 +982,9 @@ const Post = ({ post }) => {
       </Dialog>
     </div>
   );
-};
+});
+
+// DISPLAY NAME FOR THE COMPONENT
+Post.displayName = "Post";
 
 export default Post;

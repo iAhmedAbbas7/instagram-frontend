@@ -71,8 +71,11 @@ const LeftSidebar = () => {
   const sidebarItemClickHandler = (label) => {
     // IF NO LABEL
     if (!label) return;
+    if (label === "Home") {
+      navigate("/home");
+    }
     // IF LOGOUT IS CLICKED
-    if (label === "Logout") {
+    else if (label === "Logout") {
       logoutHandler();
       return;
     }
@@ -80,11 +83,15 @@ const LeftSidebar = () => {
     else if (label === "Create") {
       setShowPostDialog(true);
     }
+    // IF PROFILE IS CLICKED
+    else if (label === "Profile") {
+      navigate(`profile/${user?._id}`);
+    }
   };
   return (
     <>
       {/* LEFT SIDEBAR MAIN WRAPPER */}
-      <section className="fixed top-0 left-0 bg-gray-50 h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
+      <section className="fixed top-0 left-0 bg-white h-screen w-[250px] border-r-2 border-gray-200 px-3 py-6">
         {/* LEFT SIDEBAR CONTENT WRAPPER */}
         <section className="flex flex-col items-center justify-between h-full">
           {/* LOGO */}

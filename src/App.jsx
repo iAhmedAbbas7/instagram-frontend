@@ -5,6 +5,7 @@ import Login from "./components/auth/Login";
 import MainLayout from "./layout/MainLayout";
 import RootLayout from "./layout/RootLayout";
 import SignUp from "./components/auth/SignUp";
+import Profile from "./components/user/Profile";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // <= PUBLIC ROUTES =>
@@ -18,7 +19,10 @@ const publicRoutes = [
 const privateRoutes = {
   path: "/home",
   element: <MainLayout />,
-  children: [{ index: true, element: <Home /> }],
+  children: [
+    { index: true, element: <Home /> },
+    { path: "profile/:id", element: <Profile /> },
+  ],
 };
 
 // <= APP ROUTING =>
