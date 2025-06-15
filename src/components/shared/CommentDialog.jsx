@@ -1,6 +1,7 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+import Comment from "../user/Comment";
 import { useEffect, useState } from "react";
 import I1 from "../../assets/images/I1.jpg";
 import I2 from "../../assets/images/I2.jpg";
@@ -8,9 +9,11 @@ import I3 from "../../assets/images/I3.jpg";
 import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
 import { formatDistanceStrict } from "date-fns";
+import { setUserProfile } from "@/redux/authSlice";
 import { getShortRelativeTime } from "@/utils/time";
 import { FaHeart, FaRegHeart } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
+import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
@@ -27,8 +30,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "../ui/hover-card";
-import { AnimatePresence, motion } from "framer-motion";
-import Comment from "../user/Comment";
 
 // <= HOVER CARD IMAGES =>
 const hoverCardImages = [I1, I2, I3];
@@ -38,6 +39,8 @@ const CommentDialog = ({ post, open, setOpen }) => {
   const { user } = useSelector((store) => store.auth);
   // GETTING POSTS FROM THE POST SLICE
   const { posts } = useSelector((store) => store.post);
+  // GETTING USER PROFILE FORM AUTH SLICE
+  const { userProfile } = useSelector((store) => store.auth);
   // DISPATCH
   const dispatch = useDispatch();
   // LIKES STATE FOR EACH POST
@@ -157,6 +160,7 @@ const CommentDialog = ({ post, open, setOpen }) => {
   const likeOrUnlikePostHandler = async () => {
     // SNAPSHOT OF ORIGINAL POSTS
     const originalPosts = [...posts];
+    const originalUserProfile = { ...userProfile };
     // SNAPSHOT OF LIKED STATE
     const originalLiked = liked;
     // SNAPSHOT OF ORIGINAL LIKES COUNT
@@ -164,7 +168,7 @@ const CommentDialog = ({ post, open, setOpen }) => {
     // OPTIMISTICALLY UPDATING LIKE STATE
     const newLiked = !originalLiked;
     // OPTIMISTICALLY UPDATING LIKES COUNT
-    newLiked ? originalLikes + 1 : originalLikes - 1;
+    const newLikesCount = newLiked ? originalLikes + 1 : originalLikes - 1;
     // UPDATING THE POST LIKES
     const updatedPosts = posts.map((p) =>
       p._id === post._id
@@ -176,8 +180,31 @@ const CommentDialog = ({ post, open, setOpen }) => {
           }
         : p
     );
+    // UPDATING THE USER POST LIKES
+    const updatedUserPosts = userProfile.posts.map((p) =>
+      p._id === post._id
+        ? {
+            ...p,
+            likes: newLiked
+              ? [...p.likes, user._id]
+              : p.likes.filter((id) => id !== user._id),
+          }
+        : p
+    );
+    // UPDATING LIKED STATE
+    setLiked(newLiked);
+    // UPDATING LIKES COUNT
+    setPostLikes(newLikesCount);
     // SETTING UPDATED POSTS
     dispatch(setPosts(updatedPosts));
+    // DISPATCHING UPDATED USER POSTS
+    dispatch(
+      setUserProfile({
+        ...userProfile,
+        posts: updatedUserPosts,
+      })
+    );
+
     try {
       // LIKES LOADING STATE
       setLikesLoading(true);
@@ -204,8 +231,11 @@ const CommentDialog = ({ post, open, setOpen }) => {
         }
       }
     } catch (error) {
-      // REVERTING CHANGES TO ORIGINAL ON ERROR
+      // REVERTING CHANGES TO ORIGINAL DATA ON ERROR
+      setLiked(originalLiked);
+      setLikes(originalLikes);
       dispatch(setPosts(originalPosts));
+      dispatch(setUserProfile(originalUserProfile));
       // LOGGING ERROR MESSAGE
       console.error("Failed to Perform Action!", error);
       // TOASTING ERROR MESSAGE
@@ -290,6 +320,8 @@ const CommentDialog = ({ post, open, setOpen }) => {
         const updatedCommentsData = [response.data.comment, ...postComments];
         // SETTING THE UPDATED COMMENTS DATA
         setPostComments(updatedCommentsData);
+        // UPDATING THE COMMENTS LENGTH
+        setCommentsLength(updatedCommentsData.length);
         // CREATING UPDATED POST DATA
         const updatedPostData = posts.map((p) =>
           p._id === post?._id
@@ -301,6 +333,15 @@ const CommentDialog = ({ post, open, setOpen }) => {
         );
         // SETTING THE UPDATED POST DATA
         dispatch(setPosts(updatedPostData));
+        // DISPATCHING THE UPDATED USER PROFILE POSTS DATA
+        dispatch(
+          setUserProfile({
+            ...userProfile,
+            posts: userProfile.posts.map((p) =>
+              p._id === post._id ? { ...p, comments: updatedCommentsData } : p
+            ),
+          })
+        );
         // TOASTING SUCCESS MESSAGE
         toast.success(response?.data?.message);
         // CLEARING THE COMMENT INPUT
@@ -706,8 +747,7 @@ const CommentDialog = ({ post, open, setOpen }) => {
                     onClick={() => setLikesDialogOpen(true)}
                     className="w-full font-[600] mt-1 cursor-pointer"
                   >
-                    {post?.likes?.length}{" "}
-                    {post?.likes?.length === 1 ? "like" : "likes"}
+                    {postLikes} {postLikes === 1 ? "like" : "likes"}
                   </span>
                   {/* LIKES DIALOG */}
                   <Dialog open={likesDialogOpen}>
