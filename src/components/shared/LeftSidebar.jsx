@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
+import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   Heart,
@@ -22,6 +23,8 @@ import {
 const LeftSidebar = () => {
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
+  // AVATAR FALLBACK MANAGEMENT
+  const fullNameInitials = getFullNameInitials(user?.fullName);
   // NAVIGATION
   const navigate = useNavigate();
   // DISPATCH
@@ -60,7 +63,7 @@ const LeftSidebar = () => {
       icon: (
         <Avatar className="w-6 h-6">
           <AvatarImage src={user?.profilePhoto} />
-          <AvatarFallback>CN</AvatarFallback>
+          <AvatarFallback>{fullNameInitials}</AvatarFallback>
         </Avatar>
       ),
       label: "Profile",

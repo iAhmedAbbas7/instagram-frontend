@@ -100,13 +100,13 @@ const CreatePost = ({ open, setOpen }) => {
             <div className="w-full flex items-center gap-3 px-4 py-4">
               {/* AVATAR */}
               <Avatar className="w-10 h-10">
-                <AvatarImage src={user?.profilePhoto} alt={user.username} />
+                <AvatarImage src={user?.profilePhoto} alt={user?.username} />
                 <AvatarFallback>CN</AvatarFallback>
               </Avatar>
               {/* USERNAME */}
               <div className="flex flex-col items-start justify-center">
-                <span className="text-[1rem] font-[600]">{user.username}</span>
-                <span className="text-xs text-gray-500">{user.fullName}</span>
+                <span className="text-[1rem] font-[600]">{user?.username}</span>
+                <span className="text-xs text-gray-500">{user?.fullName}</span>
               </div>
             </div>
             {/* CHOOSE IMAGE */}

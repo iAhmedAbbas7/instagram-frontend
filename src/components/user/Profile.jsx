@@ -2,9 +2,9 @@
 import { useState } from "react";
 import useTitle from "@/hooks/useTitle";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaMessage } from "react-icons/fa6";
+import { useNavigate, useParams } from "react-router-dom";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -24,6 +24,8 @@ const Profile = () => {
   const currentUserId = user?._id;
   // USE TITLE HOOK
   useTitle("Instagram - Profile");
+  // NAVIGATION
+  const navigate = useNavigate();
   // PARAMS
   const params = useParams();
   // GETTING USER ID FROM URL PARAMS
@@ -88,7 +90,10 @@ const Profile = () => {
                 </span>
                 {userProfile?._id === currentUserId ? (
                   <>
-                    <button className="border-none outline-none focus:outline-none bg-gray-200 font-semibold rounded-sm px-3 py-1 hover:bg-gray-300 cursor-pointer text-[0.9rem]">
+                    <button
+                      onClick={() => navigate("/home/account/edit")}
+                      className="border-none outline-none focus:outline-none bg-gray-200 font-semibold rounded-sm px-3 py-1 hover:bg-gray-300 cursor-pointer text-[0.9rem]"
+                    >
                       Edit Profile
                     </button>
                     <button className="border-none outline-none focus:outline-none bg-gray-200 font-semibold rounded-sm px-3 py-1 hover:bg-gray-300 cursor-pointer text-[0.9rem]">
@@ -136,7 +141,7 @@ const Profile = () => {
               </div>
               {/* BIO */}
               <div className="text-[1rem] font-normal mt-2">
-                <p>Bio Section</p>
+                <p className="whitespace-pre-wrap">{userProfile?.bio}</p>
               </div>
             </div>
           </div>

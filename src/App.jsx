@@ -6,6 +6,7 @@ import MainLayout from "./layout/MainLayout";
 import RootLayout from "./layout/RootLayout";
 import SignUp from "./components/auth/SignUp";
 import Profile from "./components/user/Profile";
+import EditProfile from "./components/user/EditProfile";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // <= PUBLIC ROUTES =>
@@ -22,6 +23,7 @@ const privateRoutes = {
   children: [
     { index: true, element: <Home /> },
     { path: "profile/:id", element: <Profile /> },
+    { path: "account/edit", element: <EditProfile /> },
   ],
 };
 
