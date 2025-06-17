@@ -19,7 +19,7 @@ const RightSidebar = () => {
       : fullName.slice(0, 2).toUpperCase();
   return (
     // RIGHT SIDEBAR MAIN WRAPPER
-    <div className="flex flex-col gap-6 items-start justify-start pr-36">
+    <div className="flex flex-col gap-6 items-start justify-start max-[1200px]:pr-50 max-[1160px]:hidden pr-36">
       {/* AVATAR & USERNAME */}
       <div className="flex items-center gap-3">
         {/* AVATAR */}

@@ -32,7 +32,7 @@ const Posts = () => {
   );
   return (
     // POSTS SECTION MAIN WRAPPER
-    <section className="md:max-w-[500px] w-full">
+    <section className="max-w-[500px] max-[1160px]:w-full">
       {/* IF POSTS AVAILABLE */}
       {posts.map((post, i) => {
         const ref = i === posts.length - 1 ? lastPostRef : null;
