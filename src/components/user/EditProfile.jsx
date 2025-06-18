@@ -155,7 +155,7 @@ const EditProfile = () => {
   }, [input]);
   return (
     // EDIT PROFILE MAIN WRAPPER
-    <div className="pl-[250px] flex items-center justify-center">
+    <div className="w-full max-[1200px]:pl-[70px] max-[768px]:pt-[75px] max-[768px]:pb-[60px] pl-[250px] flex items-center justify-center max-[768px]:px-4">
       {/* EDIT PROFILE CONTENT WRAPPER */}
       <section className="md:max-w-[70%] w-full py-6 flex flex-col items-start justify-start">
         {/* HEADING */}

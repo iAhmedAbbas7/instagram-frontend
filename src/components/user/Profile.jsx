@@ -53,7 +53,7 @@ const Profile = () => {
   };
   return (
     // PROFILE MAIN WRAPPER
-    <div className="pl-[250px] flex items-center justify-center">
+    <div className="w-full max-[1200px]:pl-[70px] max-[768px]:pl-0 px-3 max-[768px]:pt-[75px] max-[768px]:pb-[60px] pl-[250px] flex items-center justify-center">
       {/* LOADING */}
       {loading && (
         <div className="w-full h-screen flex items-center justify-center">
@@ -62,9 +62,9 @@ const Profile = () => {
       )}
       {/* PROFILE CONTENT WRAPPER */}
       {!loading && (
-        <div className="md:px-16 px-0 w-full flex flex-col">
+        <div className="max-[1200px]:px-6 px-16 w-full flex flex-col items-center justify-center">
           {/* TOP SECTION */}
-          <div className="py-10 flex items-center justify-center gap-[5rem]">
+          <div className="w-full py-10 flex items-center justify-center max-[768px]:flex-col max-[768px]:items-start max-[768px]:justify-start gap-[5rem]">
             {/* AVATAR SECTION */}
             <div>
               <Avatar
@@ -188,7 +188,7 @@ const Profile = () => {
             </div>
           </div>
           {/* TABS CONTENT SECTION */}
-          <div className="grid grid-cols-3 gap-2 pt-1 pb-6">
+          <div className="w-full grid grid-cols-3 max-[768px]:grid-cols-2 max-[600px]:grid-cols-1 gap-2 pt-1 pb-6">
             {userProfile?.posts.map((post) => (
               <div key={post._id} className="relative group cursor-pointer">
                 {/* POST IMAGE */}

@@ -10,6 +10,7 @@ import INSTAGRAM from "../../assets/images/INSTA-SMALL.png";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
+  Compass,
   Heart,
   Home,
   List,
@@ -17,7 +18,6 @@ import {
   MessageCircle,
   PlusSquare,
   Search,
-  TrendingUp,
 } from "lucide-react";
 
 const LeftSidebarSmall = () => {
@@ -55,7 +55,7 @@ const LeftSidebarSmall = () => {
   const sidebarItems = [
     { icon: <Home size={30} />, label: "Home" },
     { icon: <Search size={30} />, label: "Search" },
-    { icon: <TrendingUp size={30} />, label: "Explore" },
+    { icon: <Compass size={30} />, label: "Explore" },
     { icon: <MessageCircle size={30} />, label: "Messages" },
     { icon: <Heart size={30} />, label: "Notifications" },
     { icon: <PlusSquare size={30} />, label: "Create" },
@@ -94,11 +94,11 @@ const LeftSidebarSmall = () => {
   return (
     <>
       {/* LEFT SIDEBAR SMALL MAIN WRAPPER */}
-      <section className="fixed top-0 max-[1200px]:block hidden left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6">
+      <section className="fixed top-0 max-[768px]:hidden max-[1200px]:block hidden left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6">
         {/* LEFT SIDEBAR SMALL CONTENT WRAPPER */}
-        <section className="flex flex-col items-center justify-between h-full">
+        <section className="flex flex-col items-center justify-between gap-2 h-full">
           {/* LOGO */}
-          <div className="w-full flex items-center justify-center">
+          <div className="w-full flex items-start justify-center">
             <img
               src={INSTAGRAM}
               alt="Instagram Logo"
@@ -109,6 +109,7 @@ const LeftSidebarSmall = () => {
           <div className="w-full flex flex-col items-center justify-center gap-1">
             {sidebarItems.map((item, index) => (
               <div
+                title={item.label}
                 onClick={() => sidebarItemClickHandler(item.label)}
                 key={index}
                 className="w-full flex items-center justify-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"
@@ -119,7 +120,7 @@ const LeftSidebarSmall = () => {
           </div>
           {/* MORE SECTION */}
           <div className="w-full flex items-center justify-center p-3 rounded-md text-[1.1rem] hover:bg-gray-100 cursor-pointer">
-            <span>
+            <span title="More">
               <List size={30} />
             </span>
           </div>

@@ -10,6 +10,7 @@ import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
+  Compass,
   Heart,
   Home,
   List,
@@ -17,7 +18,6 @@ import {
   MessageCircle,
   PlusSquare,
   Search,
-  TrendingUp,
 } from "lucide-react";
 
 const LeftSidebar = () => {
@@ -55,7 +55,7 @@ const LeftSidebar = () => {
   const sidebarItems = [
     { icon: <Home />, label: "Home" },
     { icon: <Search />, label: "Search" },
-    { icon: <TrendingUp />, label: "Explore" },
+    { icon: <Compass />, label: "Explore" },
     { icon: <MessageCircle />, label: "Messages" },
     { icon: <Heart />, label: "Notifications" },
     { icon: <PlusSquare />, label: "Create" },
