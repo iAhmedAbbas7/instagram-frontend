@@ -3,9 +3,9 @@ import { toast } from "sonner";
 import { useState } from "react";
 import CreatePost from "../user/CreatePost";
 import axiosClient from "@/utils/axiosClient";
-import { useNavigate } from "react-router-dom";
 import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import INSTAGRAM from "../../assets/images/INSTA-SMALL.png";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -23,6 +23,10 @@ import {
 const LeftSidebarSmall = () => {
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
+  // LOCATION
+  const { pathname } = useLocation();
+  // CHAT PAGE CONDITIONAL DISPLAY
+  const isChatPage = pathname.startsWith("/home/chat");
   // AVATAR FALLBACK MANAGEMENT
   const fullNameInitials = getFullNameInitials(user?.fullName);
   // NAVIGATION
@@ -90,11 +94,19 @@ const LeftSidebarSmall = () => {
     else if (label === "Profile") {
       navigate(`profile/${user?._id}`);
     }
+    // IF MESSAGES IS CLICKED
+    else if (label === "Messages") {
+      navigate("chat");
+    }
   };
   return (
     <>
       {/* LEFT SIDEBAR SMALL MAIN WRAPPER */}
-      <section className="fixed top-0 max-[768px]:hidden max-[1200px]:block hidden left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6">
+      <section
+        className={`fixed top-0 max-[768px]:hidden max-[1200px]:block ${
+          isChatPage ? "block" : "hidden"
+        } left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6`}
+      >
         {/* LEFT SIDEBAR SMALL CONTENT WRAPPER */}
         <section className="flex flex-col items-center justify-between gap-2 h-full">
           {/* LOGO */}

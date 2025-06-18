@@ -6,6 +6,7 @@ import MainLayout from "./layout/MainLayout";
 import RootLayout from "./layout/RootLayout";
 import SignUp from "./components/auth/SignUp";
 import Profile from "./components/user/Profile";
+import ChatPage from "./components/chat/ChatPage";
 import EditProfile from "./components/user/EditProfile";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
@@ -24,6 +25,7 @@ const privateRoutes = {
     { index: true, element: <Home /> },
     { path: "profile/:id", element: <Profile /> },
     { path: "account/edit", element: <EditProfile /> },
+    { path: "chat", element: <ChatPage /> },
   ],
 };
 
