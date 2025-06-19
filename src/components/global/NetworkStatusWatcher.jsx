@@ -22,7 +22,7 @@ const NetworkStatusWatcher = () => {
     }
     // INITIAL CONNECTION QUALITY CHECK
     if (connection && connection.effectiveType) {
-      const slowTypes = ["slow-2g", "2g", "3g"];
+      const slowTypes = ["slow-2g", "2g"];
       setIsPoor(slowTypes.includes(connection.effectiveType));
     }
     // HANDLING OFFLINE STATUS
@@ -41,7 +41,7 @@ const NetworkStatusWatcher = () => {
     let updateQuality;
     if (connection) {
       updateQuality = () => {
-        const slowTypes = ["slow-2g", "2g", "3g"];
+        const slowTypes = ["slow-2g", "2g"];
         setIsPoor(slowTypes.includes(connection.effectiveType));
       };
       connection.addEventListener("change", updateQuality);
