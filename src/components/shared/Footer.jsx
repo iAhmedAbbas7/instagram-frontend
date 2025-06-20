@@ -4,6 +4,7 @@ import { useState } from "react";
 import CreatePost from "../user/CreatePost";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
+import { setChatUser } from "@/redux/chatSlice";
 import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
@@ -83,6 +84,10 @@ const Footer = () => {
     // IF PROFILE IS CLICKED
     else if (label === "Profile") {
       navigate(`profile/${user?._id}`);
+    } // IF MESSAGES IS CLICKED
+    else if (label === "Messages") {
+      dispatch(setChatUser(null));
+      navigate("chat");
     }
   };
   return (

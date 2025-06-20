@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import CreatePost from "../user/CreatePost";
 import axiosClient from "@/utils/axiosClient";
+import { setChatUser } from "@/redux/chatSlice";
 import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -96,6 +97,7 @@ const LeftSidebarSmall = () => {
     }
     // IF MESSAGES IS CLICKED
     else if (label === "Messages") {
+      dispatch(setChatUser(null));
       navigate("chat");
     }
   };
