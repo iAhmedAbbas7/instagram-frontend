@@ -15,7 +15,7 @@ import {
   Home,
   List,
   LogOut,
-  MessageCircle,
+  MessageCircleMore,
   PlusSquare,
   Search,
 } from "lucide-react";
@@ -60,7 +60,7 @@ const LeftSidebar = () => {
     { icon: <Home />, label: "Home" },
     { icon: <Search />, label: "Search" },
     { icon: <Compass />, label: "Explore" },
-    { icon: <MessageCircle />, label: "Messages" },
+    { icon: <MessageCircleMore />, label: "Messages" },
     { icon: <Heart />, label: "Notifications" },
     { icon: <PlusSquare />, label: "Create" },
     {

@@ -15,7 +15,7 @@ import {
   Home,
   List,
   LogOut,
-  MessageCircle,
+  MessageCircleMore,
   PlusSquare,
   Search,
 } from "lucide-react";
@@ -60,7 +60,7 @@ const LeftSidebarSmall = () => {
     { icon: <Home size={30} />, label: "Home" },
     { icon: <Search size={30} />, label: "Search" },
     { icon: <Compass size={30} />, label: "Explore" },
-    { icon: <MessageCircle size={30} />, label: "Messages" },
+    { icon: <MessageCircleMore size={30} />, label: "Messages" },
     { icon: <Heart size={30} />, label: "Notifications" },
     { icon: <PlusSquare size={30} />, label: "Create" },
     {

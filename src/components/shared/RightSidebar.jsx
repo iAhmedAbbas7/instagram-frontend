@@ -1,27 +1,19 @@
 // <= IMPORTS =>
 import { useSelector } from "react-redux";
 import SuggestedUsers from "../user/SuggestedUsers";
+import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const RightSidebar = () => {
   // CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // AVATAR FALLBACK MANAGEMENT
-  const fullName = user?.fullName || "";
-  // DERIVING PARTS OF THE FULLNAME
-  const fullNameParts = fullName.split(" ").filter(Boolean);
-  // GETTING INITIALS OF THE FULLNAME
-  const fullNameInitials =
-    fullNameParts.length > 1
-      ? (
-          fullNameParts[0][0] + fullNameParts[fullNameParts.length - 1][0]
-        ).toUpperCase()
-      : fullName.slice(0, 2).toUpperCase();
+  const fullNameInitials = getFullNameInitials(user?.fullName);
   return (
     // RIGHT SIDEBAR MAIN WRAPPER
-    <div className="flex flex-col gap-6 items-start justify-start max-[1200px]:pr-50 max-[1160px]:hidden pr-36">
+    <div className="flex flex-col gap-6 items-start justify-start max-[1160px]:hidden min-w-[270px]">
       {/* AVATAR & USERNAME */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 w-full">
         {/* AVATAR */}
         <Avatar
           className={`w-11 h-11 cursor-pointer ${

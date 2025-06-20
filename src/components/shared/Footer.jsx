@@ -8,7 +8,13 @@ import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Compass, Home, LogOut, MessageCircle, PlusSquare } from "lucide-react";
+import {
+  Compass,
+  Home,
+  LogOut,
+  MessageCircleMore,
+  PlusSquare,
+} from "lucide-react";
 
 const Footer = () => {
   // GETTING CURRENT USER CREDENTIALS
@@ -45,7 +51,7 @@ const Footer = () => {
   const footerItems = [
     { icon: <Home size={27} />, label: "Home" },
     { icon: <Compass size={27} />, label: "Explore" },
-    { icon: <MessageCircle size={27} />, label: "Messages" },
+    { icon: <MessageCircleMore size={27} />, label: "Messages" },
     { icon: <PlusSquare size={27} />, label: "Create" },
     {
       icon: (
@@ -81,7 +87,7 @@ const Footer = () => {
   };
   return (
     // FOOTER MAIN WRAPPER
-    <section className="bg-white hidden max-[768px]:flex items-center justify-between px-6 h-[60px] fixed bottom-0 w-full overflow-hidden z-[999999]">
+    <section className="bg-white hidden max-[768px]:flex items-center justify-between px-6 h-[60px] fixed bottom-0 w-full overflow-hidden z-[999999] border-t-2 border-gray-200">
       {/* FOOTER ITEMS */}
       <div className="w-full flex items-center justify-evenly">
         {footerItems.map((item, index) => (

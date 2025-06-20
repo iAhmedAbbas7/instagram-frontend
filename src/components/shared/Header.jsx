@@ -1,11 +1,20 @@
 // <= IMPORTS =>
+import { useLocation } from "react-router-dom";
 import { Heart, Search, X } from "lucide-react";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
 
 const Header = () => {
+  // LOCATION
+  const { pathname } = useLocation();
+  // CHAT PAGE CONDITIONAL DISPLAY
+  const isChatPage = pathname.startsWith("/home/chat");
   return (
     // HEADER MAIN WRAPPER
-    <section className="bg-white hidden max-[768px]:flex items-center justify-between px-6 h-[70px] fixed top-0 w-full overflow-hidden z-[999999]">
+    <section
+      className={`bg-white hidden ${
+        isChatPage ? "max-[768px]:hidden" : "max-[768px]:flex"
+      } items-center justify-between px-6 h-[70px] fixed top-0 w-full overflow-hidden z-[999999]`}
+    >
       {/* LEFT SECTION */}
       <div className="flex items-center justify-center">
         <img src={INSTAGRAM} alt="Logo" className="h-9 cursor-pointer" />

@@ -35,7 +35,9 @@ const Profile = () => {
   // GETTING USER PROFILE FORM AUTH SLICE
   const { userProfile } = useSelector((store) => store.auth);
   // AVATAR FALLBACK MANAGEMENT
-  const fullNameInitials = getFullNameInitials(userProfile?.fullName);
+  const fullNameInitials = userProfile?.fullName
+    ? getFullNameInitials(userProfile?.fullName)
+    : "";
   // ACTIVE TAB STATE MANAGEMENT
   const [activeTab, setActiveTab] = useState("POSTS");
   // COMMENT DIALOG STATE
@@ -55,13 +57,13 @@ const Profile = () => {
     // PROFILE MAIN WRAPPER
     <div className="w-full max-[1200px]:pl-[70px] max-[768px]:pl-0 px-3 max-[768px]:pt-[75px] max-[768px]:pb-[60px] pl-[250px] flex items-center justify-center">
       {/* LOADING */}
-      {loading && (
+      {(loading || !userProfile) && (
         <div className="w-full h-screen flex items-center justify-center">
           <Loader2 size={40} className="animate-spin text-sky-400" />
         </div>
       )}
       {/* PROFILE CONTENT WRAPPER */}
-      {!loading && (
+      {!loading && userProfile && (
         <div className="max-[1200px]:px-6 px-16 w-full flex flex-col items-center justify-center">
           {/* TOP SECTION */}
           <div className="w-full py-10 flex items-center justify-center max-[768px]:flex-col max-[768px]:items-start max-[768px]:justify-start gap-[5rem]">
