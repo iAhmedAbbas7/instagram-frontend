@@ -39,7 +39,7 @@ const ChatPage = () => {
   const fullNameInitials = user?.fullName
     ? getFullNameInitials(user?.fullName)
     : "";
-  // AVATAR FALLBACK MANAGEMENT FOR LOGGED IN USER
+  // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
   const fullNameInitialsChatUser = chatUser?.fullName
     ? getFullNameInitials(chatUser?.fullName)
     : "";
