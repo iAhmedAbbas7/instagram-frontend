@@ -5,6 +5,7 @@ import useTitle from "@/hooks/useTitle";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { setChatUser } from "@/redux/chatSlice";
+import { formatDistanceToNow } from "date-fns";
 import { useDispatch, useSelector } from "react-redux";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -33,8 +34,8 @@ const ChatPage = () => {
   const navigate = useNavigate();
   // CURRENT USER CREDENTIALS & SUGGESTED USERS
   const { user, suggestedUsers } = useSelector((store) => store.auth);
-  // GETTING SELECTED CHAT USER FROM CHAT SLICE
-  const { chatUser } = useSelector((store) => store.chat);
+  // GETTING SELECTED CHAT USER & ONLINE USERS FROM CHAT SLICE
+  const { chatUser, onlineUsers } = useSelector((store) => store.chat);
   // AVATAR FALLBACK MANAGEMENT FOR LOGGED IN USER
   const fullNameInitials = user?.fullName
     ? getFullNameInitials(user?.fullName)
@@ -184,9 +185,15 @@ const ChatPage = () => {
               {suggestedUsers.length > 0 &&
                 suggestedUsers.map((suggestedUser) => {
                   // AVATAR FALLBACK MANAGEMENT
-                  const fullNameInitials = getFullNameInitials(
-                    suggestedUser?.fullName
-                  );
+                  const fullNameInitials = suggestedUser?.fullName
+                    ? getFullNameInitials(suggestedUser?.fullName)
+                    : "";
+                  // ONLINE FLAG
+                  const isOnline = onlineUsers?.includes(suggestedUser?._id);
+                  // LAST ACTIVE TIME
+                  const lastActiveTime = suggestedUser?.lastActive
+                    ? formatDistanceToNow(suggestedUser?.lastActive)
+                    : "Offline";
                   return (
                     <>
                       {/* AVATAR & USERNAME */}
@@ -211,12 +218,25 @@ const ChatPage = () => {
                         </Avatar>
                         {/* USERNAME */}
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[1rem]">
-                            {suggestedUser?.fullName}
+                          <span className="font-semibold text-[1rem] flex items-center gap-2">
+                            <span>{suggestedUser?.fullName}</span>
+                            {/* ONLINE SIGNAL */}
+                            {isOnline && (
+                              <div
+                                title="Online"
+                                className="w-3 h-3 rounded-full bg-green-500"
+                              ></div>
+                            )}
                           </span>
                           <span className="text-gray-500 text-sm">
                             {suggestedUser?.username}
                           </span>
+                          {/* LAST ACTIVE TIME */}
+                          {!isOnline && (
+                            <span className="text-[0.7rem] text-gray-500">
+                              Active {lastActiveTime} ago
+                            </span>
+                          )}
                         </div>
                       </div>
                     </>

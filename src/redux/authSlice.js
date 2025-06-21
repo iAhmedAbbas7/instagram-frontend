@@ -21,6 +21,14 @@ const authSlice = createSlice({
     setSuggestedUsers: (state, action) => {
       state.suggestedUsers = action.payload;
     },
+    updateSuggestedUserLastActive: (
+      state,
+      { payload: { userId, lastActive } }
+    ) => {
+      state.suggestedUsers = state.suggestedUsers.map((user) =>
+        user._id === userId ? { ...user, lastActive } : user
+      );
+    },
     sessionExpired: (state) => {
       state.expired = true;
     },
@@ -36,6 +44,7 @@ export const {
   setUser,
   setUserProfile,
   setSuggestedUsers,
+  updateSuggestedUserLastActive,
   sessionExpired,
   clearAuthState,
 } = authSlice.actions;
