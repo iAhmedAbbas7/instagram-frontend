@@ -1,12 +1,14 @@
 // <= IMPORTS =>
+import { toast } from "sonner";
 import Messages from "./Messages";
 import { Button } from "../ui/button";
 import useTitle from "@/hooks/useTitle";
 import { useEffect, useState } from "react";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { setChatUser } from "@/redux/chatSlice";
 import { formatDistanceToNow } from "date-fns";
 import { useDispatch, useSelector } from "react-redux";
+import { setChatUser, setMessages } from "@/redux/chatSlice";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -32,10 +34,14 @@ const ChatPage = () => {
   const dispatch = useDispatch();
   // NAVIGATION
   const navigate = useNavigate();
+  // MESSAGE TEXT STATE
+  const [messageText, setMessageText] = useState("");
   // CURRENT USER CREDENTIALS & SUGGESTED USERS
   const { user, suggestedUsers } = useSelector((store) => store.auth);
   // GETTING SELECTED CHAT USER & ONLINE USERS FROM CHAT SLICE
-  const { chatUser, onlineUsers } = useSelector((store) => store.chat);
+  const { chatUser, onlineUsers, messages } = useSelector(
+    (store) => store.chat
+  );
   // AVATAR FALLBACK MANAGEMENT FOR LOGGED IN USER
   const fullNameInitials = user?.fullName
     ? getFullNameInitials(user?.fullName)
@@ -52,6 +58,39 @@ const ChatPage = () => {
       setSidebarContent("MESSAGES");
     }
   }, [chatUser]);
+  // ALWAYS SETTING THE CHAT USER TO NULL ON COMPONENT MOUNT
+  useEffect(() => {
+    return () => {
+      setChatUser(null);
+    };
+  }, []);
+  // SEND MESSAGE HANDLER
+  const sendMessageHandler = async (receiverId) => {
+    try {
+      // MAKING REQUEST
+      const response = await axiosClient.post(
+        `/message/send/${receiverId}`,
+        { message: messageText },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // SETTING MESSAGE IN THE CHAT MESSAGES STATE
+        dispatch(setMessages([...messages, response.data.populatedMessage]));
+        // CLEARING MESSAGE FIELD
+        setMessageText("");
+      }
+    } catch (error) {
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Send Message", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Send Message");
+    }
+  };
   return (
     // CHAT PAGE MAIN WRAPPER
     <section className="w-full max-[768px]:pl-[0px] h-screen pl-[70px] flex items-start justify-start">
@@ -502,12 +541,28 @@ const ChatPage = () => {
               <Messages chatUser={chatUser} />
             </div>
             {/* MESSAGE INPUT */}
-            <div className="w-full p-3 bg-white">
+            <div className="w-full p-3 bg-white relative flex items-center justify-center">
               <input
+                value={messageText}
+                id="messageText"
+                name="messageText"
+                onChange={(e) => setMessageText(e.target.value)}
                 type="text"
-                className="w-full border-gray-200 outline-none focus:outline-none border-2 rounded-full px-4 py-2"
+                className="w-full border-gray-200 outline-none focus:outline-none border-2 rounded-full pl-4 pr-15 py-2"
                 placeholder="Message..."
+                spellCheck="false"
+                autoComplete="off"
               />
+              {/* SEND BUTTON */}
+              {messageText.trim() && (
+                <span
+                  onClick={() => sendMessageHandler(chatUser?._id)}
+                  title="Send"
+                  className="absolute right-8 text-sm text-sky-400 hover:text-sky-500 cursor-pointer font-semibold"
+                >
+                  Send
+                </span>
+              )}
             </div>
           </div>
         )}

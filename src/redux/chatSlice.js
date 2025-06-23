@@ -5,25 +5,25 @@ import { createSlice } from "@reduxjs/toolkit";
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
-    socket: null,
     chatUser: null,
     onlineUsers: [],
+    messages: [],
   },
   reducers: {
-    setSocket: (state, action) => {
-      state.socket = action.payload;
-    },
     setChatUser: (state, action) => {
       state.chatUser = action.payload;
     },
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
     },
+    setMessages: (state, action) => {
+      state.messages = action.payload;
+    },
   },
 });
 
 // <= EXPORTING SLICE ACTIONS =>
-export const { setSocket, setChatUser, setOnlineUsers } = chatSlice.actions;
+export const { setChatUser, setOnlineUsers, setMessages } = chatSlice.actions;
 
 // <= EXPORTING CHAT SLICE =>
 export default chatSlice.reducer;

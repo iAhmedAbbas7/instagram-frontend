@@ -7,6 +7,7 @@ import store from "./redux/store";
 import { Provider } from "react-redux";
 import ReactDOM from "react-dom/client";
 import { persistStore } from "redux-persist";
+import { SocketProvider } from "./context/SocketContext";
 import { PersistGate } from "redux-persist/integration/react";
 
 // <= REDUX-PERSIST =>
@@ -23,7 +24,9 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <App />
+        <SocketProvider>
+          <App />
+        </SocketProvider>
       </PersistGate>
     </Provider>
     <Toaster position="bottom-left" />
