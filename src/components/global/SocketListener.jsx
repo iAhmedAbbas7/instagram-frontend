@@ -2,22 +2,31 @@
 import { toast } from "sonner";
 import { io } from "socket.io-client";
 import { useEffect, useRef } from "react";
+import { setPosts } from "@/redux/postSlice";
+import { FaRegHeart } from "react-icons/fa6";
 import axiosClient from "@/utils/axiosClient";
-import { MessageCircleMore } from "lucide-react";
 import { useSocketRef } from "@/context/SocketContext";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import { MessageCircleMore, MessageSquareMore } from "lucide-react";
 import { setChatUser, setMessages, setOnlineUsers } from "@/redux/chatSlice";
 import {
   setSuggestedUsers,
+  setUserProfile,
   updateSuggestedUserLastActive,
 } from "@/redux/authSlice";
+import {
+  setCommentNotifications,
+  setLikeNotifications,
+} from "@/redux/notificationSlice";
 
 const SocketListener = () => {
-  // CURRENT USER CREDENTIALS
-  const { user } = useSelector((store) => store.auth);
+  // CURRENT USER & CURRENT USER PROFILE CREDENTIALS
+  const { user, userProfile } = useSelector((store) => store.auth);
   // GETTING MESSAGES FROM THE CHAT SLICE
   const { messages } = useSelector((store) => store.chat);
+  // GETTING POSTS FROM POST SLICE
+  const { posts } = useSelector((store) => store.post);
   // DISPATCH
   const dispatch = useDispatch();
   // LOCATION
@@ -30,6 +39,8 @@ const SocketListener = () => {
   const socketRef = useSocketRef();
   // MESSAGES ROUTE PATH
   const isOnMessagesPage = location.pathname.startsWith("/home/chat");
+  // SETTING CURRENT USER ID
+  const currentUserId = user?._id;
   // INITIALIZING SOCKET CONNECTION FOR CLIENT SIDE
   useEffect(() => {
     // IF USER DOES NOT EXISTS, THEN RETURNING
@@ -78,8 +89,6 @@ const SocketListener = () => {
     });
     // LISTENING FOR NEW CHAT MESSAGE SOCKET EVENT
     socketRef.current.on("newMessage", (populatedMessage) => {
-      // CURRENT USER
-      const isLoggedInUser = user?._id;
       // MESSAGE SENDER
       const messageSender = populatedMessage?.senderId?._id;
       // DISPATCHING THE NEW MESSAGE IN THE MESSAGES ONLY WHEN THE USER IS CURRENTLY IN CHAT
@@ -87,7 +96,7 @@ const SocketListener = () => {
         dispatch(setMessages([...messages, populatedMessage]));
       }
       // EMITTING TOAST NOTIFICATION IF USER IS NOT ON THE CHAT PAGE
-      if (!isOnMessagesPage && !isLoggedInUser !== messageSender) {
+      if (!isOnMessagesPage && !currentUserId !== messageSender) {
         toast(`New Message from ${populatedMessage?.senderId?.fullName}`, {
           icon: <MessageCircleMore />,
           action: {
@@ -102,6 +111,116 @@ const SocketListener = () => {
         });
       }
     });
+    // LISTENING FOR LIKE OR UNLIKE POST SOCKET EVENT
+    socketRef.current.on("notification", (notification) => {
+      // INCREMENTING OR DECREMENTING THE POST LIKES COUNT BASED ON ACTION TYPE
+      if (currentUserId !== notification?.likingUser?._id) {
+        // UPDATING THE GLOBAL FEED POSTS
+        const updatedPosts = posts?.map((p) =>
+          p?._id === notification?.postId
+            ? {
+                ...p,
+                likes:
+                  notification?.type === "like"
+                    ? [...p.likes, notification?.userId]
+                    : p.likes.filter((id) => id !== notification?.userId),
+              }
+            : p
+        );
+        // DISPATCHING THE UPDATED GLOBAL FEED POSTS
+        dispatch(setPosts(updatedPosts));
+        // IF USER PROFILE EXISTS
+        if (userProfile !== null) {
+          // UPDATING THE USER PROFILE POSTS
+          const updatedUserPosts = userProfile?.posts.map((p) =>
+            p?._id === notification?.postId
+              ? {
+                  ...p,
+                  likes:
+                    notification?.type === "like"
+                      ? [...p.likes, notification?.userId]
+                      : p.likes.filter((id) => id !== notification?.userId),
+                }
+              : p
+          );
+          // DISPATCHING THE UPDATED USER PROFILE POSTS
+          dispatch(
+            setUserProfile({
+              ...userProfile,
+              posts: updatedUserPosts,
+            })
+          );
+        }
+        // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
+        dispatch(setLikeNotifications(notification));
+      }
+      // TOASTING LIVE NOTIFICATION TO THE POST OWNER ON LIKE EVENT
+      if (
+        notification?.type === "like" &&
+        notification?.postAuthorId === currentUserId
+      ) {
+        toast(
+          <div className="flex items-center gap-2">
+            <FaRegHeart size={25} className="text-red-500" />
+            <span>
+              <span className="font-bold">
+                {notification?.likingUser?.username}
+              </span>{" "}
+              Liked your Post
+            </span>
+          </div>
+        );
+      }
+    });
+    // LISTENING FOR COMMENT ON POST SOCKET EVENT
+    socketRef.current.on("comment", ({ notification, comment }) => {
+      // ADDING COMMENT TO THE POST BASED ON WHO COMMENTED
+      if (currentUserId !== notification?.commentingUser?._id) {
+        // UPDATING THE GLOBAL FEED POSTS
+        const updatedPosts = posts?.map((p) =>
+          p?._id === notification?.postId
+            ? { ...p, comments: [comment, ...p.comments] }
+            : p
+        );
+        // DISPATCHING THE UPDATED POSTS
+        dispatch(setPosts(updatedPosts));
+        // IF USER PROFILE EXISTS
+        if (userProfile !== null) {
+          // UPDATING THE USER PROFILE POSTS
+          const updatedUserPosts = userProfile?.posts.map((p) =>
+            p?._id === notification?.postId
+              ? { ...p, comments: [comment, ...p.comments] }
+              : p
+          );
+          // DISPATCHING THE UPDATED USER PROFILE POSTS
+          dispatch(
+            setUserProfile({
+              ...userProfile,
+              posts: updatedUserPosts,
+            })
+          );
+          // DISPATCHING THE NOTIFICATION IN THE NOTIFICATION SLICE
+          dispatch(setCommentNotifications(notification));
+        }
+      }
+      // TOASTING LIVE NOTIFICATION TO THE POST OWNER ON LIKE EVENT
+      if (
+        notification?.postAuthorId === currentUserId &&
+        notification?.commentingUser?._id !== currentUserId
+      ) {
+        toast(
+          <div className="flex items-center gap-2">
+            <MessageSquareMore size={25} className="text-red-500" />
+            <span>
+              <span className="font-bold">
+                {notification?.commentingUser?.username}
+              </span>{" "}
+              Commented your Post
+            </span>
+          </div>
+        );
+      }
+    });
     // CLEANUP FUNCTION
     return () => {
       // CLOSING THE SOCKET CONNECTION
@@ -109,7 +228,17 @@ const SocketListener = () => {
       // CLOSING THE SOCKET NEW MESSAGE LISTENER
       socketRef.current.off("newMessage");
     };
-  }, [user, socketRef, messages, dispatch, navigate, isOnMessagesPage]);
+  }, [
+    user,
+    socketRef,
+    messages,
+    dispatch,
+    navigate,
+    isOnMessagesPage,
+    posts,
+    currentUserId,
+    userProfile,
+  ]);
 };
 
 export default SocketListener;

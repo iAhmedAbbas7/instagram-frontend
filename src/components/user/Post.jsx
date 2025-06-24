@@ -113,14 +113,14 @@ const Post = forwardRef(({ post }, ref) => {
       }
     };
     fetchPostLikes();
-  }, [post?._id, commentDialogOpen]);
+  }, [post?._id, commentDialogOpen, post.likes]);
   // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
   useEffect(() => {
     setPostComments(post?.comments);
     setPostLikes(post?.likes?.length);
     setLiked(post?.likes?.includes(user._id));
     setCommentsLength(post?.comments?.length);
-  }, [user._id, post.likes, post?.comments?.length, post?.comments]);
+  }, [user._id, post.likes, post?.comments?.length, post?.comments, posts]);
   // SETTING THE POST OWNER
   const isOwner = post?.author?._id === user._id;
   // SETTING MENU ITEMS ACCORDING TO THE LOGGED IN USER

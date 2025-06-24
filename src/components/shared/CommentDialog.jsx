@@ -94,6 +94,9 @@ const CommentDialog = ({ post, open, setOpen }) => {
     { id: 8, label: "About this Account" },
     { id: 9, label: "Cancel" },
   ];
+  // SETTING USER PROFILE POST LIKES LENGTH
+  const postLikesLength = userProfile?.posts?.find((p) => p._id === post._id)
+    ?.likes?.length;
   // FETCHING LIKES FOR THE POST ON RENDER
   useEffect(() => {
     const fetchPostLikes = async () => {
@@ -115,7 +118,36 @@ const CommentDialog = ({ post, open, setOpen }) => {
       }
     };
     fetchPostLikes();
-  }, [post?._id, open]);
+  }, [post?._id, open, post.likes]);
+  // FETCHING LIKES FOR THE USER PROFILE POST ON RENDER
+  useEffect(() => {
+    // IF USER PROFILE & USER PROFILE POSTS EXISTS
+    if (userProfile && userProfile.posts && post?._id) {
+      // FINDING THE UPDATED POST IN THE USER PROFILE POSTS
+      const updatedPost = userProfile.posts.find((p) => p._id === post._id);
+      // IF UPDATED POST FOUND
+      if (updatedPost) {
+        const fetchPostLikes = async () => {
+          setLikesLoading(true);
+          try {
+            const response = await axiosClient.get(`/post/${post._id}/likes`);
+            // IF RESPONSE SUCCESS
+            if (response.data.success) {
+              // SETTING POST LIKES
+              setLikes(response.data.likes);
+            }
+          } catch (error) {
+            // LOGGING ERROR MESSAGE
+            console.log(error);
+          } finally {
+            // LIKES LOADING STATE
+            setLikesLoading(false);
+          }
+        };
+        fetchPostLikes();
+      }
+    }
+  }, [userProfile, postLikesLength, post._id]);
   // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
   useEffect(() => {
     setPostComments(post?.comments);
@@ -123,6 +155,21 @@ const CommentDialog = ({ post, open, setOpen }) => {
     setLiked(post?.likes?.includes(user._id));
     setCommentsLength(post?.comments?.length);
   }, [user._id, post.likes, post?.comments?.length, post?.comments]);
+  // SYNCHRONIZING THE USER PROFILE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
+  useEffect(() => {
+    // IF USER PROFILE & USER PROFILE POSTS EXISTS
+    if (userProfile && userProfile?.posts && post?._id) {
+      // FINDING THE UPDATED POST IN THE USER PROFILE POSTS
+      const updatedPost = userProfile.posts.find((p) => p?._id === post?._id);
+      // IF UPDATED POST FOUND
+      if (updatedPost) {
+        setPostComments(updatedPost?.comments);
+        setPostLikes(updatedPost?.likes?.length);
+        setLiked(updatedPost?.likes.includes(user?._id));
+        setCommentsLength(updatedPost?.comments?.length);
+      }
+    }
+  }, [userProfile, userProfile?.posts, post?._id, user?._id]);
   // SETTING THE POST OWNER
   const isOwner = post?.author?._id === user._id;
   // SETTING MENU ITEMS ACCORDING TO THE LOGGED IN USER

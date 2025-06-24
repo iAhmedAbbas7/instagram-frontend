@@ -116,3 +116,7 @@
     @apply bg-background text-foreground;
   }
 }
+/* CUSTOM STYLES */
+body {
+  overflow-x: hidden;
+}

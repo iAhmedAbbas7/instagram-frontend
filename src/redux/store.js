@@ -3,6 +3,7 @@ import authSlice from "./authSlice";
 import postSlice from "./postSlice";
 import chatSlice from "./chatSlice";
 import storage from "redux-persist/lib/storage";
+import notificationSlice from "./notificationSlice";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import {
   persistReducer,
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   auth: authSlice,
   post: postSlice,
   chat: chatSlice,
+  notification: notificationSlice,
 });
 
 // <= REDUX-PERSIST =>
