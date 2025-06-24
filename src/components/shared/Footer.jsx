@@ -5,7 +5,6 @@ import CreatePost from "../user/CreatePost";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { setChatUser } from "@/redux/chatSlice";
-import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -16,6 +15,11 @@ import {
   MessageCircleMore,
   PlusSquare,
 } from "lucide-react";
+import {
+  clearAuthState,
+  setIsLoggedIn,
+  setIsLoggingOut,
+} from "@/redux/authSlice";
 
 const Footer = () => {
   // GETTING CURRENT USER CREDENTIALS
@@ -34,6 +38,10 @@ const Footer = () => {
       const response = await axiosClient.get(`/user/logout`);
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // SETTING LOGGING IN STATE IN AUTH SLICE
+        dispatch(setIsLoggedIn(false));
+        // SETTING LOGGING OUT STATE IN AUTH SLICE
+        dispatch(setIsLoggingOut(true));
         // CLEARING AUTH STATE
         dispatch(clearAuthState());
         // NAVIGATING TO THE MAIN PAGE

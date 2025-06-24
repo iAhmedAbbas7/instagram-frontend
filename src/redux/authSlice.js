@@ -6,6 +6,8 @@ const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: null,
+    isLoggedIn: false,
+    isLoggingOut: false,
     userProfile: null,
     suggestedUsers: [],
     expired: false,
@@ -14,6 +16,12 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       state.user = action.payload;
       state.expired = false;
+    },
+    setIsLoggedIn: (state, action) => {
+      state.isLoggedIn = action.payload;
+    },
+    setIsLoggingOut: (state, action) => {
+      state.isLoggingOut = action.payload;
     },
     setUserProfile: (state, action) => {
       state.userProfile = action.payload;
@@ -42,6 +50,8 @@ const authSlice = createSlice({
 // <= EXPORTING SLICE ACTIONS =>
 export const {
   setUser,
+  setIsLoggedIn,
+  setIsLoggingOut,
   setUserProfile,
   setSuggestedUsers,
   updateSuggestedUserLastActive,

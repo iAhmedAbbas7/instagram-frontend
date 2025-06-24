@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import useTitle from "@/hooks/useTitle";
 import { useDispatch } from "react-redux";
-import { setUser } from "@/redux/authSlice";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
+import { setIsLoggedIn, setIsLoggingOut, setUser } from "@/redux/authSlice";
 
 const Login = () => {
   // USE TITLE HOOK
@@ -49,6 +49,10 @@ const Login = () => {
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // SETTING LOGGING IN STATE IN AUTH SLICE
+        dispatch(setIsLoggedIn(true));
+        // SETTING LOGGING OUT STATE IN AUTH SLICE
+        dispatch(setIsLoggingOut(false));
         // SETTING USER IN THE AUTH STATE
         dispatch(setUser(response.data.user));
         // NAVIGATING TO HOMEPAGE

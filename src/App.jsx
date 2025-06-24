@@ -8,24 +8,78 @@ import SignUp from "./components/auth/SignUp";
 import Profile from "./components/user/Profile";
 import ChatPage from "./components/chat/ChatPage";
 import EditProfile from "./components/user/EditProfile";
+import ProtectedRoute from "./components/global/ProtectedRoute";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // <= PUBLIC ROUTES =>
 const publicRoutes = [
-  { path: "/", element: <Main /> },
-  { path: "/signup", element: <SignUp /> },
-  { path: "/login", element: <Login /> },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <Main />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <ProtectedRoute>
+        <SignUp />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+      <ProtectedRoute>
+        <Login />
+      </ProtectedRoute>
+    ),
+  },
 ];
 
 // <= PRIVATE ROUTES =>
 const privateRoutes = {
   path: "/home",
-  element: <MainLayout />,
+  element: (
+    <ProtectedRoute>
+      <MainLayout />
+    </ProtectedRoute>
+  ),
   children: [
-    { index: true, element: <Home /> },
-    { path: "profile/:id", element: <Profile /> },
-    { path: "account/edit", element: <EditProfile /> },
-    { path: "chat", element: <ChatPage /> },
+    {
+      index: true,
+      element: (
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "profile/:id",
+      element: (
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "account/edit",
+      element: (
+        <ProtectedRoute>
+          <EditProfile />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "chat",
+      element: (
+        <ProtectedRoute>
+          <ChatPage />
+        </ProtectedRoute>
+      ),
+    },
   ],
 };
 
@@ -33,7 +87,11 @@ const privateRoutes = {
 const appRouter = createBrowserRouter([
   {
     path: "/",
-    element: <RootLayout />,
+    element: (
+      <ProtectedRoute>
+        <RootLayout />
+      </ProtectedRoute>
+    ),
     children: [...publicRoutes, privateRoutes],
   },
 ]);

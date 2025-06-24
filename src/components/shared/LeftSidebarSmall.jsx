@@ -4,7 +4,6 @@ import { useState } from "react";
 import CreatePost from "../user/CreatePost";
 import axiosClient from "@/utils/axiosClient";
 import { setChatUser } from "@/redux/chatSlice";
-import { clearAuthState } from "@/redux/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import INSTAGRAM from "../../assets/images/INSTA-SMALL.png";
@@ -20,6 +19,11 @@ import {
   PlusSquare,
   Search,
 } from "lucide-react";
+import {
+  clearAuthState,
+  setIsLoggedIn,
+  setIsLoggingOut,
+} from "@/redux/authSlice";
 
 const LeftSidebarSmall = () => {
   // GETTING CURRENT USER CREDENTIALS
@@ -42,6 +46,10 @@ const LeftSidebarSmall = () => {
       const response = await axiosClient.get(`/user/logout`);
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // SETTING LOGGING IN STATE IN AUTH SLICE
+        dispatch(setIsLoggedIn(false));
+        // SETTING LOGGING OUT STATE IN AUTH SLICE
+        dispatch(setIsLoggingOut(true));
         // CLEARING AUTH STATE
         dispatch(clearAuthState());
         // NAVIGATING TO THE MAIN PAGE
