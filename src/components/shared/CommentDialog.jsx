@@ -9,11 +9,11 @@ import I3 from "../../assets/images/I3.jpg";
 import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
 import { formatDistanceStrict } from "date-fns";
-import { setUserProfile } from "@/redux/authSlice";
 import { getShortRelativeTime } from "@/utils/time";
-import { FaHeart, FaRegHeart } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
+import { setUser, setUserProfile } from "@/redux/authSlice";
+import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa6";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
@@ -69,6 +69,10 @@ const CommentDialog = ({ post, open, setOpen }) => {
   const [deletePostDialogOpen, setShowDeletePostDialogOpen] = useState(false);
   // LIKES DIALOG STATE
   const [likesDialogOpen, setLikesDialogOpen] = useState(false);
+  // BOOKMARK STATE
+  const [bookmarked, setBookmarked] = useState(
+    user?.bookmarks?.includes(post?._id) || false
+  );
   // OWNER'S POST DIALOG ITEMS
   const ownersPostItems = [
     { id: 1, label: "Delete" },
@@ -154,7 +158,15 @@ const CommentDialog = ({ post, open, setOpen }) => {
     setPostLikes(post?.likes?.length);
     setLiked(post?.likes?.includes(user._id));
     setCommentsLength(post?.comments?.length);
-  }, [user._id, post.likes, post?.comments?.length, post?.comments]);
+    setBookmarked(user?.bookmarks?.includes(post?._id));
+  }, [
+    user._id,
+    post.likes,
+    post?.comments?.length,
+    post?.comments,
+    post?._id,
+    user?.bookmarks,
+  ]);
   // SYNCHRONIZING THE USER PROFILE POST LIKES, COMMENTS, LIKED STATE & COMMENTS LENGTH
   useEffect(() => {
     // IF USER PROFILE & USER PROFILE POSTS EXISTS
@@ -402,6 +414,44 @@ const CommentDialog = ({ post, open, setOpen }) => {
     } finally {
       // POST COMMENT LOADING STATE
       setPostCommentLoading(false);
+    }
+  };
+  // POST BOOKMARK HANDLER
+  const postBookmarkHandler = async () => {
+    // SNAPSHOT OF ORIGINAL BOOKMARK STATE
+    const originalBookmarked = bookmarked;
+    // SNAPSHOT OF THE ORIGINAL USER BOOKMARKS
+    const originalBookmarks = user?.bookmarks ? [...user.bookmarks] : [];
+    // OPTIMISTICALLY UPDATING THE BOOKMARK STATE
+    setBookmarked(!originalBookmarked);
+    // OPTIMISTICALLY UPDATING THE USER BOOKMARKS
+    let updatedBookmarks;
+    // IF ALREADY BOOKMARKED THEN REMOVING IT, OTHERWISE ADDING IT
+    if (originalBookmarked) {
+      updatedBookmarks = user?.bookmarks.filter((id) => id !== post?._id);
+    } else {
+      updatedBookmarks = [...originalBookmarks, post?._id];
+    }
+    // SAVING THE UPDATED USER IN THE AUTH SLICE
+    dispatch(setUser({ ...user, bookmarks: updatedBookmarks }));
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.get(
+        `/post/${post?._id}/bookOrUnBookmarkPost`
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      // REVERTING TO ORIGINAL STATE ON ERROR
+      setBookmarked(originalBookmarked);
+      dispatch(setUser({ ...user, bookmarks: originalBookmarks }));
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Bookmark Post!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Bookmark Post!");
     }
   };
   return (
@@ -781,11 +831,21 @@ const CommentDialog = ({ post, open, setOpen }) => {
                       </span>
                     </div>
                     {/* BOOKMARK */}
-                    <div title="Save">
-                      <Bookmark
-                        size={"28px"}
-                        className="hover:text-gray-500 cursor-pointer"
-                      />
+                    <div
+                      onClick={postBookmarkHandler}
+                      title={bookmarked ? "Unsave" : "Save"}
+                    >
+                      {bookmarked ? (
+                        <FaBookmark
+                          size={"25px"}
+                          className="hover:text-gray-500 cursor-pointer"
+                        />
+                      ) : (
+                        <Bookmark
+                          size={"28px"}
+                          className="hover:text-gray-500 cursor-pointer"
+                        />
+                      )}
                     </div>
                   </div>
                   {/* POST LIKES */}

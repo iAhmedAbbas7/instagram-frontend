@@ -1,6 +1,7 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+import { setUser } from "@/redux/authSlice";
 import I1 from "../../assets/images/I1.jpg";
 import I2 from "../../assets/images/I2.jpg";
 import I3 from "../../assets/images/I3.jpg";
@@ -8,10 +9,10 @@ import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
 import { getShortRelativeTime } from "@/utils/time";
 import CommentDialog from "../shared/CommentDialog";
-import { FaHeart, FaRegHeart } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import { forwardRef, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa6";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
@@ -67,6 +68,10 @@ const Post = forwardRef(({ post }, ref) => {
   const [likesDialogOpen, setLikesDialogOpen] = useState(false);
   // DELETE POST LOADING STATE
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // BOOKMARK STATE
+  const [bookmarked, setBookmarked] = useState(
+    user?.bookmarks?.includes(post?._id) || false
+  );
   // OWNER'S POST DIALOG ITEMS
   const ownersPostItems = [
     { id: 1, label: "Delete" },
@@ -120,7 +125,16 @@ const Post = forwardRef(({ post }, ref) => {
     setPostLikes(post?.likes?.length);
     setLiked(post?.likes?.includes(user._id));
     setCommentsLength(post?.comments?.length);
-  }, [user._id, post.likes, post?.comments?.length, post?.comments, posts]);
+    setBookmarked(user?.bookmarks?.includes(post?._id));
+  }, [
+    user._id,
+    post.likes,
+    post?.comments?.length,
+    post?.comments,
+    posts,
+    post?._id,
+    user?.bookmarks,
+  ]);
   // SETTING THE POST OWNER
   const isOwner = post?.author?._id === user._id;
   // SETTING MENU ITEMS ACCORDING TO THE LOGGED IN USER
@@ -224,6 +238,10 @@ const Post = forwardRef(({ post }, ref) => {
             setLikes(response.data.likes);
           }
         } catch (error) {
+          // RESTORING ORIGINAL STATE ON ERROR
+          setPosts(originalPosts);
+          setLiked(originalLiked);
+          setLikes(originalLikes);
           // LOGGING ERROR MESSAGE
           console.log(error);
         } finally {
@@ -310,6 +328,44 @@ const Post = forwardRef(({ post }, ref) => {
     } finally {
       // POST COMMENT LOADING STATE
       setPostCommentLoading(false);
+    }
+  };
+  // POST BOOKMARK HANDLER
+  const postBookmarkHandler = async () => {
+    // SNAPSHOT OF ORIGINAL BOOKMARK STATE
+    const originalBookmarked = bookmarked;
+    // SNAPSHOT OF THE ORIGINAL USER BOOKMARKS
+    const originalBookmarks = user?.bookmarks ? [...user.bookmarks] : [];
+    // OPTIMISTICALLY UPDATING THE BOOKMARK STATE
+    setBookmarked(!originalBookmarked);
+    // OPTIMISTICALLY UPDATING THE USER BOOKMARKS
+    let updatedBookmarks;
+    // IF ALREADY BOOKMARKED THEN REMOVING IT, OTHERWISE ADDING IT
+    if (originalBookmarked) {
+      updatedBookmarks = user?.bookmarks.filter((id) => id !== post?._id);
+    } else {
+      updatedBookmarks = [...originalBookmarks, post?._id];
+    }
+    // SAVING THE UPDATED USER IN THE AUTH SLICE
+    dispatch(setUser({ ...user, bookmarks: updatedBookmarks }));
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.get(
+        `/post/${post?._id}/bookOrUnBookmarkPost`
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      // REVERTING TO ORIGINAL STATE ON ERROR
+      setBookmarked(originalBookmarked);
+      dispatch(setUser({ ...user, bookmarks: originalBookmarks }));
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Bookmark Post!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Bookmark Post!");
     }
   };
   return (
@@ -616,11 +672,21 @@ const Post = forwardRef(({ post }, ref) => {
           </span>
         </div>
         {/* BOOKMARK */}
-        <div title="Save">
-          <Bookmark
-            size={"28px"}
-            className="hover:text-gray-500 cursor-pointer"
-          />
+        <div
+          onClick={postBookmarkHandler}
+          title={bookmarked ? "Unsave" : "Save"}
+        >
+          {bookmarked ? (
+            <FaBookmark
+              size={"25px"}
+              className="hover:text-gray-500 cursor-pointer"
+            />
+          ) : (
+            <Bookmark
+              size={"28px"}
+              className="hover:text-gray-500 cursor-pointer"
+            />
+          )}
         </div>
       </div>
       {/* POST LIKES */}
