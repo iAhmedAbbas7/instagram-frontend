@@ -53,15 +53,17 @@ const Profile = () => {
   const changeActiveTabHandler = (tab) => {
     setActiveTab(tab);
   };
+  // LOADING UI
+  if (loading || !userProfile) {
+    return (
+      <div className="w-screen h-screen max-[1200px]:pl-[70px] max-[768px]:pl-0 px-3 max-[768px]:pt-[75px] max-[768px]:pb-[60px] pl-[250px] flex items-center justify-center g-white">
+        <Loader2 size={40} className="animate-spin text-sky-400" />
+      </div>
+    );
+  }
   return (
     // PROFILE MAIN WRAPPER
     <div className="w-full max-[1200px]:pl-[70px] max-[768px]:pl-0 px-3 max-[768px]:pt-[75px] max-[768px]:pb-[60px] pl-[250px] flex items-center justify-center">
-      {/* LOADING */}
-      {(loading || !userProfile) && (
-        <div className="w-full h-screen flex items-center justify-center">
-          <Loader2 size={40} className="animate-spin text-sky-400" />
-        </div>
-      )}
       {/* PROFILE CONTENT WRAPPER */}
       {!loading && userProfile && (
         <div className="max-[1200px]:px-6 px-16 w-full flex flex-col items-center justify-center">

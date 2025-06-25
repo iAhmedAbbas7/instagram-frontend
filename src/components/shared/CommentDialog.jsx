@@ -8,6 +8,7 @@ import I2 from "../../assets/images/I2.jpg";
 import I3 from "../../assets/images/I3.jpg";
 import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceStrict } from "date-fns";
 import { getShortRelativeTime } from "@/utils/time";
 import { useDispatch, useSelector } from "react-redux";
@@ -35,14 +36,16 @@ import {
 const hoverCardImages = [I1, I2, I3];
 
 const CommentDialog = ({ post, open, setOpen }) => {
+  // DISPATCH
+  const dispatch = useDispatch();
+  // NAVIGATION
+  const navigate = useNavigate();
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // GETTING POSTS FROM THE POST SLICE
   const { posts } = useSelector((store) => store.post);
   // GETTING USER PROFILE FORM AUTH SLICE
   const { userProfile } = useSelector((store) => store.auth);
-  // DISPATCH
-  const dispatch = useDispatch();
   // LIKES STATE FOR EACH POST
   const [likes, setLikes] = useState([]);
   // COMMENT STATE
@@ -356,6 +359,10 @@ const CommentDialog = ({ post, open, setOpen }) => {
     } // IF DELETE WAS CLICKED
     else if (label === "Delete") {
       setShowDeletePostDialogOpen(true);
+    }
+    // IF EDIT WAS CLICKED
+    else if (label === "Edit") {
+      navigate(`post/${post?._id}/edit`);
     }
   };
   // POST COMMENT HANDLER
