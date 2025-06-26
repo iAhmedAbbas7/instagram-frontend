@@ -1,10 +1,16 @@
 // <= IMPORTS  =>
+import { toast } from "sonner";
 import { Button } from "../ui/button";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { clearAuthState } from "@/redux/authSlice";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { useDispatch, useSelector } from "react-redux";
-import { LogIn, LucideMessageSquareWarning } from "lucide-react";
+import { LogOut, LucideMessageSquareWarning } from "lucide-react";
+import {
+  clearAuthState,
+  setIsLoggedIn,
+  setIsLoggingOut,
+} from "@/redux/authSlice";
 
 const SessionExpiryWatcher = () => {
   // NAVIGATION
@@ -15,10 +21,29 @@ const SessionExpiryWatcher = () => {
   const { expired } = useSelector((store) => store.auth);
   // IF NOT EXPIRED
   if (!expired) return null;
-  // LOGIN HANDLER
-  const handleLogin = () => {
-    dispatch(clearAuthState());
-    navigate("/login");
+  // LOGOUT HANDLER
+  const logoutHandler = async () => {
+    try {
+      const response = await axiosClient.get(`/user/logout`);
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // SETTING LOGGING IN STATE IN AUTH SLICE
+        dispatch(setIsLoggedIn(false));
+        // SETTING LOGGING OUT STATE IN AUTH SLICE
+        dispatch(setIsLoggingOut(true));
+        // CLEARING AUTH STATE
+        dispatch(clearAuthState());
+        // NAVIGATING TO THE MAIN PAGE
+        navigate("/");
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      // LOGGING ERROR IN THE CONSOLE
+      console.error("Failed to Logout!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Logout!");
+    }
   };
   return (
     <Dialog open={expired}>
@@ -35,12 +60,12 @@ const SessionExpiryWatcher = () => {
           </span>
           {/* BUTTON */}
           <Button
-            onClick={handleLogin}
+            onClick={logoutHandler}
             type="button"
             className="w-full bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-4 focus-visible:ring-0"
           >
-            <LogIn size={"70px"} />
-            Login
+            <LogOut size={"70px"} />
+            Logout
           </Button>
         </div>
       </DialogContent>

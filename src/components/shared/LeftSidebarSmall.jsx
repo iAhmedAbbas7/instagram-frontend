@@ -33,7 +33,8 @@ const LeftSidebarSmall = () => {
   // CHAT PAGE CONDITIONAL DISPLAY
   const isChatPage = pathname.startsWith("/home/chat");
   // AVATAR FALLBACK MANAGEMENT
-  const fullNameInitials = getFullNameInitials(user?.fullName);
+  const fullNameInitials =
+    user && user?.fullName ? getFullNameInitials(user?.fullName) : "";
   // NAVIGATION
   const navigate = useNavigate();
   // DISPATCH

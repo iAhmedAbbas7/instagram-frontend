@@ -25,7 +25,8 @@ const Footer = () => {
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // AVATAR FALLBACK MANAGEMENT
-  const fullNameInitials = getFullNameInitials(user?.fullName);
+  const fullNameInitials =
+    user && user?.fullName ? getFullNameInitials(user?.fullName) : "";
   // NAVIGATION
   const navigate = useNavigate();
   // DISPATCH
