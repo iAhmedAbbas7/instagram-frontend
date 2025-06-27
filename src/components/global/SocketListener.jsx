@@ -8,21 +8,25 @@ import axiosClient from "@/utils/axiosClient";
 import { useSocketRef } from "@/context/SocketContext";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MessageCircleMore, MessageSquareMore } from "lucide-react";
 import { setChatUser, setMessages, setOnlineUsers } from "@/redux/chatSlice";
+import { MessageCircleMore, MessageSquareMore, UserPlus2 } from "lucide-react";
 import {
   setSuggestedUsers,
+  setUser,
   setUserProfile,
   updateSuggestedUserLastActive,
 } from "@/redux/authSlice";
 import {
   setCommentNotifications,
+  setFollowNotifications,
   setLikeNotifications,
 } from "@/redux/notificationSlice";
 
 const SocketListener = () => {
-  // CURRENT USER & CURRENT USER PROFILE CREDENTIALS
-  const { user, userProfile } = useSelector((store) => store.auth);
+  // CURRENT USER ,CURRENT USER & SUGGESTED USERS PROFILE CREDENTIALS
+  const { user, userProfile, suggestedUsers } = useSelector(
+    (store) => store.auth
+  );
   // GETTING MESSAGES FROM THE CHAT SLICE
   const { messages } = useSelector((store) => store.chat);
   // GETTING POSTS FROM POST SLICE
@@ -41,6 +45,12 @@ const SocketListener = () => {
   const isOnMessagesPage = location.pathname.startsWith("/home/chat");
   // SETTING CURRENT USER ID
   const currentUserId = user?._id;
+  // KEEPING A REFERENCE OF THE SUGGESTED USERS IN THE REF
+  const suggestedUsersRef = useRef(suggestedUsers);
+  // SYNCING THE LATEST SUGGESTED USERS IN THE REF
+  useEffect(() => {
+    suggestedUsersRef.current = suggestedUsers;
+  }, [suggestedUsers]);
   // INITIALIZING SOCKET CONNECTION FOR CLIENT SIDE
   useEffect(() => {
     // IF USER DOES NOT EXISTS, THEN RETURNING
@@ -166,7 +176,7 @@ const SocketListener = () => {
               <span className="font-bold">
                 {notification?.likingUser?.username}
               </span>{" "}
-              Liked your Post
+              Liked Your Post
             </span>
           </div>
         );
@@ -215,10 +225,62 @@ const SocketListener = () => {
               <span className="font-bold">
                 {notification?.commentingUser?.username}
               </span>{" "}
-              Commented your Post
+              Commented on Your Post
             </span>
           </div>
         );
+      }
+    });
+    // LISTENING FOR FOLLOW OR UNFOLLOW USER SOCKET EVENT
+    socketRef.current.on("followAction", (notification) => {
+      // DESTRUCTURING NOTIFICATION OBJECT
+      const { type, followedUserId, followingUserId } = notification;
+      // UPDATING THE USER FOLLOWERS BASED ON ACTION TYPE
+      if (currentUserId === followedUserId) {
+        // CREATING NEW FOLLOWERS OBJECT
+        const newFollowers =
+          type === "follow"
+            ? [followingUserId, ...user.followers]
+            : user?.followers?.filter((id) => id !== followingUserId);
+        // DISPATCHING THE UPDATED USER IN THE AUTH SLICE
+        dispatch(setUser({ ...user, followers: newFollowers }));
+        // IF THE FOLLOWING USER WAS IN SUGGESTED LIST UPDATING ITS FOLLOWING LIST
+        const wasSuggestedUser = suggestedUsersRef.current.some(
+          (u) => u._id === followingUserId
+        );
+        // IF THE FOLLOWING USER WAS SUGGESTED USER
+        if (wasSuggestedUser) {
+          // UPDATING THE SUGGESTED USER
+          const updatedSuggestedUsers = suggestedUsersRef.current.map((u) =>
+            u._id === followingUserId
+              ? {
+                  ...u,
+                  following:
+                    type === "follow"
+                      ? [followedUserId, ...u.following]
+                      : u.following.filter((id) => id !== followedUserId),
+                }
+              : u
+          );
+          // DISPATCHING THE UPDATED SUGGESTED USERS IN THE AUTH SLICE
+          dispatch(setSuggestedUsers(updatedSuggestedUsers));
+        }
+        // TOASTING A LIVE NOTIFICATION TO THE FOLLOWED USER
+        if (notification?.type === "follow") {
+          toast(
+            <div className="flex items-center gap-2">
+              <UserPlus2 size={25} className="text-red-500" />
+              <span>
+                <span className="font-bold">
+                  {notification?.followingUser?.username}
+                </span>{" "}
+                Started Following You
+              </span>
+            </div>
+          );
+        }
+        // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
+        dispatch(setFollowNotifications(notification));
       }
     });
     // CLEANUP FUNCTION
