@@ -1,7 +1,8 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CreatePost from "../user/CreatePost";
+import SearchSidebar from "./SearchSidebar";
 import axiosClient from "@/utils/axiosClient";
 import { setChatUser } from "@/redux/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,6 +42,39 @@ const LeftSidebarSmall = () => {
   const dispatch = useDispatch();
   // POST DIALOG STATE
   const [showPostDialog, setShowPostDialog] = useState(false);
+  // SEARCH SIDEBAR VISIBILITY STATE
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // SEARCH SIDEBAR OPENED THROUGH SEARCH ICON TRACKING STATE
+  const [searchJustOpened, setSearchJustOpened] = useState(false);
+  // TRANSITION REF
+  const transitionRef = useRef(false);
+  // SEARCH CLICK HANDLER
+  const searchClickHandler = () => {
+    // IF TRANSITION REF IS ONGOING
+    if (transitionRef.current) return;
+    // OPEN & CLOSE SEARCH SIDEBAR HANDLING
+    if (!isSearchOpen) {
+      transitionRef.current = true;
+      setIsSearchOpen(true);
+      setSearchJustOpened(true);
+      setTimeout(() => {
+        transitionRef.current = false;
+      }, 500);
+    } else {
+      transitionRef.current = true;
+      setIsSearchOpen(false);
+      setTimeout(() => {
+        transitionRef.current = false;
+      }, 500);
+    }
+  };
+  // EFFECT TO RESET THE SEARCH JUST OPENED STATE ON SEARCH OPEN
+  useEffect(() => {
+    if (searchJustOpened) {
+      const timeout = setTimeout(() => setSearchJustOpened(false), 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [searchJustOpened]);
   // LOGOUT HANDLER
   const logoutHandler = async () => {
     try {
@@ -85,7 +119,9 @@ const LeftSidebarSmall = () => {
     { icon: <LogOut size={30} />, label: "Logout" },
   ];
   // SIDEBAR ITEM CLICK HANDLER
-  const sidebarItemClickHandler = (label) => {
+  const sidebarItemClickHandler = (label, e) => {
+    // STOPPING EVENT PROPAGATION
+    if (e) e.stopPropagation();
     // IF NO LABEL
     if (!label) return;
     if (label === "Home") {
@@ -109,6 +145,10 @@ const LeftSidebarSmall = () => {
       dispatch(setChatUser(null));
       navigate("chat");
     }
+    // IS SEARCH IS CLICKED
+    else if (label === "Search") {
+      searchClickHandler();
+    }
   };
   return (
     <>
@@ -116,7 +156,7 @@ const LeftSidebarSmall = () => {
       <section
         className={`fixed top-0 max-[768px]:hidden max-[1200px]:block ${
           isChatPage ? "block" : "hidden"
-        } left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6`}
+        } left-0 bg-white h-screen w-[70px] border-r-2 border-gray-200 px-3 py-6 z-[100]`}
       >
         {/* LEFT SIDEBAR SMALL CONTENT WRAPPER */}
         <section className="flex flex-col items-center justify-between gap-2 h-full">
@@ -133,7 +173,7 @@ const LeftSidebarSmall = () => {
             {sidebarItems.map((item, index) => (
               <div
                 title={item.label}
-                onClick={() => sidebarItemClickHandler(item.label)}
+                onClick={(e) => sidebarItemClickHandler(item.label, e)}
                 key={index}
                 className="w-full flex items-center justify-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"
               >
@@ -151,6 +191,13 @@ const LeftSidebarSmall = () => {
         {/* POST DIALOG */}
         <CreatePost open={showPostDialog} setOpen={setShowPostDialog} />
       </section>
+      {/* SEARCH SIDEBAR */}
+      <SearchSidebar
+        isOpen={isSearchOpen}
+        onClose={searchClickHandler}
+        offset={70}
+        justOpened={searchJustOpened}
+      />
     </>
   );
 };

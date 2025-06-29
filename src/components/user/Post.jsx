@@ -792,7 +792,7 @@ const Post = forwardRef(({ post }, ref) => {
       {/* LIKES DIALOG */}
       <Dialog open={likesDialogOpen}>
         <DialogContent
-          className="p-0 border-none outline-none focus-visible:ring-0 focus:outline-none rounded-sm"
+          className="p-0 border-none outline-none focus-visible:ring-0 focus:outline-none rounded-sm z-[1000]"
           onInteractOutside={() => setLikesDialogOpen(false)}
         >
           {/* DIALOG CONTENT WRAPPER */}
