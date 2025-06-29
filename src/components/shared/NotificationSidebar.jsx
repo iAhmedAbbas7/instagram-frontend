@@ -2,14 +2,14 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-const SearchSidebar = ({ isOpen, onClose, offset, justOpened }) => {
-  // SEARCH SIDEBAR CONTAINER REF
-  const searchSidebarRef = useRef();
+const NotificationSidebar = ({ isOpen, onClose, offset, justOpened }) => {
+  // NOTIFICATION SIDEBAR CONTAINER REF
+  const notificationSidebarRef = useRef();
   // SETTING THE IGNORE CLICK REF
   const ignoreClick = useRef(false);
   // CLICK OUTSIDE HANDLER
   useEffect(() => {
-    // JUST OPENED STATE PASSED THROUGH THE LEFT SIDEBAR ON SEARCH ICON CLICK
+    // JUST OPENED STATE PASSED THROUGH THE LEFT SIDEBAR ON NOTIFICATION ICON CLICK
     ignoreClick.current = !!justOpened;
     // IF CLICKED OUTSIDE THE CONTAINER
     const handleClick = (e) => {
@@ -19,8 +19,8 @@ const SearchSidebar = ({ isOpen, onClose, offset, justOpened }) => {
         return;
       }
       if (
-        searchSidebarRef.current &&
-        !searchSidebarRef.current.contains(e.target)
+        notificationSidebarRef.current &&
+        !notificationSidebarRef.current.contains(e.target)
       ) {
         onClose();
       }
@@ -46,13 +46,13 @@ const SearchSidebar = ({ isOpen, onClose, offset, justOpened }) => {
           animate={{ x: 0 }}
           exit={{ x: "-100%" }}
           transition={{ type: "tween", duration: 0.5 }}
-          ref={searchSidebarRef}
+          ref={notificationSidebarRef}
         >
-          <h1>Search</h1>
+          <h1>Notifications</h1>
         </motion.aside>
       )}
     </AnimatePresence>
   );
 };
 
-export default SearchSidebar;
+export default NotificationSidebar;

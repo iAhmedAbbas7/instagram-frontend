@@ -6,6 +6,7 @@ import axiosClient from "@/utils/axiosClient";
 import { setChatUser } from "@/redux/chatSlice";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import NotificationSidebar from "./NotificationSidebar";
 import { useLocation, useNavigate } from "react-router-dom";
 import INSTA_SMALL from "../../assets/images/INSTA-SMALL.png";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
@@ -28,6 +29,10 @@ import {
 } from "@/redux/authSlice";
 
 const LeftSidebar = () => {
+  // NAVIGATION
+  const navigate = useNavigate();
+  // DISPATCH
+  const dispatch = useDispatch();
   // GETTING CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // LOCATION
@@ -37,39 +42,85 @@ const LeftSidebar = () => {
   // AVATAR FALLBACK MANAGEMENT
   const fullNameInitials =
     user && user?.fullName ? getFullNameInitials(user?.fullName) : "";
-  // NAVIGATION
-  const navigate = useNavigate();
-  // DISPATCH
-  const dispatch = useDispatch();
   // POST DIALOG STATE
   const [showPostDialog, setShowPostDialog] = useState(false);
   // SEARCH SIDEBAR VISIBILITY STATE
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // NOTIFICATION SIDEBAR VISIBILITY STATE
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   // SHOW SMALL SIDEBAR VISIBILITY STATE
   const [showMinimalSidebar, setShowMinimalSidebar] = useState(false);
   // SEARCH SIDEBAR OPENED THROUGH SEARCH ICON TRACKING STATE
   const [searchJustOpened, setSearchJustOpened] = useState(false);
-  // TRANSITION REF
-  const transitionRef = useRef(false);
+  // NOTIFICATION SIDEBAR OPENED THROUGH NOTIFICATION ICON TRACKING STATE
+  const [notificationJustOpened, setNotificationJustOpened] = useState(false);
+  // SEARCH TRANSITION REF
+  const searchTransitionRef = useRef(false);
+  // NOTIFICATION TRANSITION REF
+  const notificationTransitionRef = useRef(false);
   // SEARCH CLICK HANDLER
   const searchClickHandler = () => {
-    // IF TRANSITION REF IS ONGOING
-    if (transitionRef.current) return;
+    // IF SEARCH TRANSITION REF IS ONGOING
+    if (searchTransitionRef.current) return;
+    // OPEN & CLOSE SEARCH SIDEBAR HANDLING WHEN NOTIFICATION SIDEBAR IS OPEN
+    if (!isSearchOpen && showMinimalSidebar && isNotificationOpen) {
+      searchTransitionRef.current = true;
+      setIsNotificationOpen(false);
+      setTimeout(() => {
+        setIsSearchOpen(true);
+        setSearchJustOpened(true);
+        searchTransitionRef.current = false;
+      }, 500);
+      return;
+    }
     // OPEN & CLOSE SEARCH SIDEBAR HANDLING
     if (!isSearchOpen && !showMinimalSidebar) {
-      transitionRef.current = true;
+      searchTransitionRef.current = true;
       setShowMinimalSidebar(true);
       setTimeout(() => {
         setIsSearchOpen(true);
         setSearchJustOpened(true);
-        transitionRef.current = false;
+        searchTransitionRef.current = false;
       }, 500);
     } else if (isSearchOpen && showMinimalSidebar) {
-      transitionRef.current = true;
+      searchTransitionRef.current = true;
       setIsSearchOpen(false);
       setTimeout(() => {
         setShowMinimalSidebar(false);
-        transitionRef.current = false;
+        searchTransitionRef.current = false;
+      }, 500);
+    }
+  };
+  // NOTIFICATION CLICK HANDLER
+  const notificationClickHandler = () => {
+    // IF NOTIFICATION TRANSITION REF IS ONGOING
+    if (notificationTransitionRef.current) return;
+    // OPEN & CLOSE NOTIFICATION SIDEBAR HANDLING WHEN SEARCH SIDEBAR IS OPEN
+    if (!isNotificationOpen && showMinimalSidebar && isSearchOpen) {
+      notificationTransitionRef.current = true;
+      setIsSearchOpen(false);
+      setTimeout(() => {
+        setIsNotificationOpen(true);
+        setNotificationJustOpened(true);
+        notificationTransitionRef.current = false;
+      }, 500);
+      return;
+    }
+    // OPEN & CLOSE NOTIFICATION SIDEBAR HANDLING
+    if (!isNotificationOpen && !showMinimalSidebar) {
+      notificationTransitionRef.current = true;
+      setShowMinimalSidebar(true);
+      setTimeout(() => {
+        setIsNotificationOpen(true);
+        setNotificationJustOpened(true);
+        notificationTransitionRef.current = false;
+      }, 500);
+    } else if (isNotificationOpen && showMinimalSidebar) {
+      notificationTransitionRef.current = true;
+      setIsNotificationOpen(false);
+      setTimeout(() => {
+        setShowMinimalSidebar(false);
+        notificationTransitionRef.current = false;
       }, 500);
     }
   };
@@ -80,6 +131,13 @@ const LeftSidebar = () => {
       return () => clearTimeout(timeout);
     }
   }, [searchJustOpened]);
+  // EFFECT TO RESET THE NOTIFICATION JUST OPENED STATE ON NOTIFICATION OPEN
+  useEffect(() => {
+    if (notificationJustOpened) {
+      const timeout = setTimeout(() => setNotificationJustOpened(false), 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [notificationJustOpened]);
   // LOGOUT HANDLER
   const logoutHandler = async () => {
     try {
@@ -173,6 +231,10 @@ const LeftSidebar = () => {
     else if (label === "Search") {
       searchClickHandler();
     }
+    // IF NOTIFICATION IS CLICKED
+    else if (label === "Notifications") {
+      notificationClickHandler();
+    }
   };
   return (
     <>
@@ -263,6 +325,13 @@ const LeftSidebar = () => {
         onClose={searchClickHandler}
         offset={70}
         justOpened={searchJustOpened}
+      />
+      {/* NOTIFICATION SIDEBAR */}
+      <NotificationSidebar
+        isOpen={isNotificationOpen}
+        onClose={notificationClickHandler}
+        offset={70}
+        justOpened={notificationJustOpened}
       />
     </>
   );
