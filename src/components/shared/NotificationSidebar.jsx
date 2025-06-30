@@ -41,7 +41,7 @@ const NotificationSidebar = ({ isOpen, onClose, offset, justOpened }) => {
       {isOpen && (
         <motion.aside
           style={{ left: offset }}
-          className="fixed top-0 h-full w-[300px] bg-white rounded-r-lg shadow-xl z-[10] overflow-hidden"
+          className="fixed top-0 h-full w-[350px] bg-white rounded-r-lg shadow-xl z-[10] overflow-hidden"
           initial={{ x: "-100%" }}
           animate={{ x: 0 }}
           exit={{ x: "-100%" }}

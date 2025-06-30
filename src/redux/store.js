@@ -2,6 +2,7 @@
 import authSlice from "./authSlice";
 import postSlice from "./postSlice";
 import chatSlice from "./chatSlice";
+import searchSlice from "./searchSlice";
 import storage from "redux-persist/lib/storage";
 import notificationSlice from "./notificationSlice";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
@@ -27,6 +28,7 @@ const rootReducer = combineReducers({
   auth: authSlice,
   post: postSlice,
   chat: chatSlice,
+  search: searchSlice,
   notification: notificationSlice,
 });
 
