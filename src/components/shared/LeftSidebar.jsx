@@ -7,6 +7,7 @@ import { setChatUser } from "@/redux/chatSlice";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import NotificationSidebar from "./NotificationSidebar";
+import { markAllAsRead } from "@/redux/notificationSlice";
 import { useLocation, useNavigate } from "react-router-dom";
 import INSTA_SMALL from "../../assets/images/INSTA-SMALL.png";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
@@ -39,6 +40,18 @@ const LeftSidebar = () => {
   const { pathname } = useLocation();
   // CHAT PAGE CONDITIONAL DISPLAY
   const isChatPage = pathname.startsWith("/home/chat");
+  // GETTING ALL NOTIFICATION STATE FROM NOTIFICATION SLICE
+  const {
+    likeNotifications,
+    commentNotifications,
+    followNotifications,
+    hasUnread,
+  } = useSelector((store) => store.notification);
+  // TOTAL NOTIFICATIONS COUNT
+  const totalNotifications =
+    likeNotifications.length +
+    commentNotifications.length +
+    followNotifications.length;
   // AVATAR FALLBACK MANAGEMENT
   const fullNameInitials =
     user && user?.fullName ? getFullNameInitials(user?.fullName) : "";
@@ -138,6 +151,12 @@ const LeftSidebar = () => {
       return () => clearTimeout(timeout);
     }
   }, [notificationJustOpened]);
+  // EFFECT TO MARK ALL NOTIFICATION AS READ ON NOTIFICATION SIDEBAR OPEN STATE
+  useEffect(() => {
+    if (isNotificationOpen && hasUnread) {
+      dispatch(markAllAsRead());
+    }
+  }, [totalNotifications, hasUnread, dispatch, isNotificationOpen]);
   // LOGOUT HANDLER
   const logoutHandler = async () => {
     try {
@@ -262,9 +281,12 @@ const LeftSidebar = () => {
                   title={item.label}
                   onClick={(e) => sidebarItemClickHandler(item.label, e)}
                   key={index}
-                  className="w-full flex items-center justify-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                  className="w-full flex items-center justify-center p-2 rounded-md hover:bg-gray-100 cursor-pointer relative"
                 >
                   <span>{item.icon}</span>
+                  {item.label === "Notifications" && hasUnread && (
+                    <span className="absolute w-3 h-3 rounded-full bg-red-500 top-2 right-1"></span>
+                  )}
                 </div>
               ))}
             </div>
@@ -300,10 +322,16 @@ const LeftSidebar = () => {
                 <div
                   onClick={(e) => sidebarItemClickHandler(item.label, e)}
                   key={index}
-                  className="flex items-center justify-start gap-2 w-full p-3 rounded-md text-[1.1rem] hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center justify-start gap-2 w-full p-3 rounded-md text-[1.1rem] hover:bg-gray-100 cursor-pointer relative"
                 >
                   <span>{item.icon}</span>
                   <span>{item.label}</span>
+                  {item.label === "Notifications" && hasUnread && (
+                    <span
+                      title="Unread Notifications"
+                      className="absolute w-3 h-3 rounded-full bg-red-500 top-2 left-7"
+                    ></span>
+                  )}
                 </div>
               ))}
             </div>
