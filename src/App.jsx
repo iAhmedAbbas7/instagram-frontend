@@ -8,6 +8,7 @@ import SignUp from "./components/auth/SignUp";
 import Profile from "./components/user/Profile";
 import ChatPage from "./components/chat/ChatPage";
 import EditPost from "./components/user/EditPost";
+import PostPage from "./components/user/PostPage";
 import EditProfile from "./components/user/EditProfile";
 import ProtectedRoute from "./components/global/ProtectedRoute";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -86,6 +87,14 @@ const privateRoutes = {
       element: (
         <ProtectedRoute>
           <EditPost />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "post/:id",
+      element: (
+        <ProtectedRoute>
+          <PostPage />
         </ProtectedRoute>
       ),
     },

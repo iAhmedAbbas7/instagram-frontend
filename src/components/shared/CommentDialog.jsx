@@ -348,6 +348,10 @@ const CommentDialog = ({ post, open, setOpen }) => {
     else if (label === "Edit") {
       navigate(`post/${post?._id}/edit`);
     }
+    // IF GO TO POST WAS CLICKED
+    else if (label === "Go to Post") {
+      navigate(`/home/post/${post?._id}`);
+    }
   };
   // POST COMMENT HANDLER
   const postCommentHandler = async () => {

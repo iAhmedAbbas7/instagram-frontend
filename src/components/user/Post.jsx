@@ -263,6 +263,10 @@ const Post = forwardRef(({ post }, ref) => {
     else if (label === "Edit") {
       navigate(`post/${post?._id}/edit`);
     }
+    // IF GO TO POST WAS CLICKED
+    else if (label === "Go to Post") {
+      navigate(`/home/post/${post?._id}`);
+    }
   };
   // ON LIKE ANIMATION HANDLER
   const onLikeAnimationHandler = () => {
