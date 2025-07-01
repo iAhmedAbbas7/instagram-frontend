@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import axiosClient from "@/utils/axiosClient";
+import UserHoverCard from "../shared/UserHoverCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSuggestedUsers, setUser } from "@/redux/authSlice";
 import useGetSuggestedUsers from "@/hooks/useGetSuggestedUsers";
@@ -132,24 +133,28 @@ const SuggestedUsers = () => {
                   {/* AVATAR & USERNAME */}
                   <div className="flex items-center gap-3">
                     {/* AVATAR */}
-                    <Avatar
-                      className={`w-11 h-11 cursor-pointer ${
-                        suggestedUser?.profilePhoto === ""
-                          ? "bg-gray-300"
-                          : "bg-none"
-                      } `}
-                    >
-                      <AvatarImage
-                        src={suggestedUser?.profilePhoto}
-                        alt={suggestedUser?.fullName}
-                      />
-                      <AvatarFallback>{fullNameInitials}</AvatarFallback>
-                    </Avatar>
+                    <UserHoverCard user={suggestedUser}>
+                      <Avatar
+                        className={`w-11 h-11 cursor-pointer ${
+                          suggestedUser?.profilePhoto === ""
+                            ? "bg-gray-300"
+                            : "bg-none"
+                        } `}
+                      >
+                        <AvatarImage
+                          src={suggestedUser?.profilePhoto}
+                          alt={suggestedUser?.fullName}
+                        />
+                        <AvatarFallback>{fullNameInitials}</AvatarFallback>
+                      </Avatar>
+                    </UserHoverCard>
                     {/* USERNAME */}
                     <div className="flex flex-col cursor-pointer">
-                      <span className="font-semibold text-[0.9rem]">
-                        {suggestedUser?.username}
-                      </span>
+                      <UserHoverCard user={suggestedUser}>
+                        <span className="font-semibold text-[0.9rem]">
+                          {suggestedUser?.username}
+                        </span>
+                      </UserHoverCard>
                       <span className="text-gray-500 text-sm">
                         {suggestedUser?.fullName}
                       </span>

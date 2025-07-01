@@ -2,10 +2,8 @@
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import Comment from "../user/Comment";
+import UserHoverCard from "./UserHoverCard";
 import { useEffect, useState } from "react";
-import I1 from "../../assets/images/I1.jpg";
-import I2 from "../../assets/images/I2.jpg";
-import I3 from "../../assets/images/I3.jpg";
 import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
 import { setUser, setUserProfile } from "@/redux/authSlice";
 import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa6";
+import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
@@ -26,14 +25,6 @@ import {
   Send,
   UserPlus,
 } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
-
-// <= HOVER CARD IMAGES =>
-const hoverCardImages = [I1, I2, I3];
 
 const CommentDialog = ({ post, open, setOpen }) => {
   // DISPATCH
@@ -197,16 +188,9 @@ const CommentDialog = ({ post, open, setOpen }) => {
     addSuffix: true,
   });
   // AVATAR FALLBACK MANAGEMENT
-  const fullName = post?.author?.fullName || "";
-  // DERIVING PARTS OF THE FULLNAME
-  const fullNameParts = fullName.split(" ").filter(Boolean);
-  // GETTING INITIALS OF THE FULLNAME
-  const fullNameInitials =
-    fullNameParts.length > 1
-      ? (
-          fullNameParts[0][0] + fullNameParts[fullNameParts.length - 1][0]
-        ).toUpperCase()
-      : fullName.slice(0, 2).toUpperCase();
+  const fullNameInitials = post?.author?.fullName
+    ? getFullNameInitials(post?.author?.fullName)
+    : "";
   // CHANGE EVENT HANDLER
   const emptyCommentHandler = (e) => {
     // INPUT TEXT
@@ -504,211 +488,29 @@ const CommentDialog = ({ post, open, setOpen }) => {
                 {/* AVATAR & USERNAME */}
                 <div className="flex items-center gap-3">
                   {/* AVATAR */}
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <Avatar
-                        className={`w-10 h-10 cursor-pointer ${
-                          post?.author?.profilePhoto === ""
-                            ? "bg-gray-300"
-                            : "bg-none"
-                        } `}
-                      >
-                        <AvatarImage
-                          src={post?.author?.profilePhoto}
-                          alt={post?.author?.fullName}
-                        />
-                        <AvatarFallback>{fullNameInitials}</AvatarFallback>
-                      </Avatar>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                      {/* HOVER CONTENT MAIN WRAPPER */}
-                      <div className="w-full flex flex-col items-center justify-center">
-                        {/* HEADER */}
-                        <div className="px-6 py-6 w-full flex items-center gap-3">
-                          {/* AVATAR */}
-                          <div>
-                            <Avatar
-                              className={`w-10 h-10 cursor-pointer ${
-                                post?.author?.profilePhoto === ""
-                                  ? "bg-gray-300"
-                                  : "bg-none"
-                              } `}
-                            >
-                              <AvatarImage
-                                src={post?.author?.profilePhoto}
-                                alt={post?.author?.fullName}
-                              />
-                              <AvatarFallback>
-                                {fullNameInitials}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          {/* USER INFO */}
-                          <div className="flex flex-col items-start justify-center">
-                            <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                              {post?.author?.username}
-                            </span>
-                            <span className="text-gray-500 text-xs">
-                              {post?.author?.fullName}
-                            </span>
-                          </div>
-                        </div>
-                        {/* PROFILE INFO */}
-                        <div className="w-full flex items-center justify-evenly pb-4">
-                          <div className="flex flex-col items-center justify-center">
-                            <span className="text-[1.1rem] font-[600]">
-                              {post?.author?.posts?.length}
-                            </span>
-                            <span className="text-sm text-gray-500">posts</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center">
-                            <span className="text-[1.1rem] font-[600]">
-                              {post?.author?.followers?.length}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              followers
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center">
-                            <span className="text-[1.1rem] font-[600]">
-                              {post?.author?.following?.length}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              following
-                            </span>
-                          </div>
-                        </div>
-                        {/* POSTS SECTION */}
-                        <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                          {hoverCardImages.map((img, index) => (
-                            <img
-                              key={index}
-                              src={img}
-                              alt="Hover Image"
-                              className="h-[8.19rem] object-cover aspect-square"
-                            />
-                          ))}
-                        </div>
-                        {/* FOLLOW & MESSAGE BUTTON */}
-                        <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                          <Button
-                            type="button"
-                            className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                          >
-                            <UserPlus size={50} />
-                            Follow
-                          </Button>
-                          <Button
-                            type="button"
-                            className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                          >
-                            <MessageCircle size={50} />
-                            Message
-                          </Button>
-                        </div>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
+                  <UserHoverCard user={post?.author}>
+                    <Avatar
+                      className={`w-10 h-10 cursor-pointer ${
+                        post?.author?.profilePhoto === ""
+                          ? "bg-gray-300"
+                          : "bg-none"
+                      } `}
+                    >
+                      <AvatarImage
+                        src={post?.author?.profilePhoto}
+                        alt={post?.author?.fullName}
+                      />
+                      <AvatarFallback>{fullNameInitials}</AvatarFallback>
+                    </Avatar>
+                  </UserHoverCard>
                   {/* USERNAME */}
                   <div className="flex flex-col items-start justify-center">
                     <span className="flex items-center gap-2 font-[600] text-[0.9rem]">
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <span className="hover:text-gray-500 cursor-pointer">
-                            {post?.author?.username}
-                          </span>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                          {/* HOVER CONTENT MAIN WRAPPER */}
-                          <div className="w-full flex flex-col items-center justify-center">
-                            {/* HEADER */}
-                            <div className="px-6 py-6 w-full flex items-center gap-3">
-                              {/* AVATAR */}
-                              <div>
-                                <Avatar
-                                  className={`w-10 h-10 cursor-pointer ${
-                                    post?.author?.profilePhoto === ""
-                                      ? "bg-gray-300"
-                                      : "bg-none"
-                                  } `}
-                                >
-                                  <AvatarImage
-                                    src={post?.author?.profilePhoto}
-                                    alt={post?.author?.fullName}
-                                  />
-                                  <AvatarFallback>
-                                    {fullNameInitials}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
-                              {/* USER INFO */}
-                              <div className="flex flex-col items-start justify-center">
-                                <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                                  {post?.author?.username}
-                                </span>
-                                <span className="text-gray-500 text-xs">
-                                  {post?.author?.fullName}
-                                </span>
-                              </div>
-                            </div>
-                            {/* PROFILE INFO */}
-                            <div className="w-full flex items-center justify-evenly pb-4">
-                              <div className="flex flex-col items-center justify-center">
-                                <span className="text-[1.1rem] font-[600]">
-                                  {post?.author?.posts?.length}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  posts
-                                </span>
-                              </div>
-                              <div className="flex flex-col items-center justify-center">
-                                <span className="text-[1.1rem] font-[600]">
-                                  {post?.author?.followers?.length}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  followers
-                                </span>
-                              </div>
-                              <div className="flex flex-col items-center justify-center">
-                                <span className="text-[1.1rem] font-[600]">
-                                  {post?.author?.following?.length}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  following
-                                </span>
-                              </div>
-                            </div>
-                            {/* POSTS SECTION */}
-                            <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                              {hoverCardImages.map((img, index) => (
-                                <img
-                                  key={index}
-                                  src={img}
-                                  alt="Hover Image"
-                                  className="h-[8.19rem] object-cover aspect-square"
-                                />
-                              ))}
-                            </div>
-                            {/* FOLLOW & MESSAGE BUTTON */}
-                            <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                              <Button
-                                type="button"
-                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                              >
-                                <UserPlus size={50} />
-                                Follow
-                              </Button>
-                              <Button
-                                type="button"
-                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                              >
-                                <MessageCircle size={50} />
-                                Message
-                              </Button>
-                            </div>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <UserHoverCard user={post?.author}>
+                        <span className="hover:text-gray-500 cursor-pointer">
+                          {post?.author?.username}
+                        </span>
+                      </UserHoverCard>
                       <span className="text-sm font-[600] text-gray-500">
                         • {shortTime}
                       </span>
@@ -907,213 +709,33 @@ const CommentDialog = ({ post, open, setOpen }) => {
                                 {/* AVATAR & USERNAME */}
                                 <div className="flex items-center gap-3">
                                   {/* AVATAR */}
-                                  <HoverCard className="relative">
-                                    <HoverCardTrigger asChild>
-                                      <Avatar
-                                        className={`w-10 h-10 cursor-pointer ${
-                                          user?.profilePhoto === ""
-                                            ? "bg-gray-300"
-                                            : "bg-none"
-                                        } `}
-                                      >
-                                        <AvatarImage
-                                          src={user?.profilePhoto}
-                                          alt={user?.fullName}
-                                        />
-                                      </Avatar>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="absolute -left-4 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                                      {/* HOVER CONTENT MAIN WRAPPER */}
-                                      <div className="w-full flex flex-col items-center justify-center">
-                                        {/* HEADER */}
-                                        <div className="px-6 py-6 w-full flex items-center gap-3">
-                                          {/* AVATAR */}
-                                          <div>
-                                            <Avatar
-                                              className={`w-10 h-10 cursor-pointer ${
-                                                user?.profilePhoto === ""
-                                                  ? "bg-gray-300"
-                                                  : "bg-none"
-                                              } `}
-                                            >
-                                              <AvatarImage
-                                                src={user?.profilePhoto}
-                                                alt={user?.fullName}
-                                              />
-                                            </Avatar>
-                                          </div>
-                                          {/* USER INFO */}
-                                          <div className="flex flex-col items-start justify-center">
-                                            <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                                              {user?.username}
-                                            </span>
-                                            <span className="text-gray-500 text-xs">
-                                              {user?.fullName}
-                                            </span>
-                                          </div>
-                                        </div>
-                                        {/* PROFILE INFO */}
-                                        <div className="w-full flex items-center justify-evenly pb-4">
-                                          <div className="flex flex-col items-center justify-center">
-                                            <span className="text-[1.1rem] font-[600]">
-                                              {user?.posts?.length}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                              posts
-                                            </span>
-                                          </div>
-                                          <div className="flex flex-col items-center justify-center">
-                                            <span className="text-[1.1rem] font-[600]">
-                                              {user?.followers?.length}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                              followers
-                                            </span>
-                                          </div>
-                                          <div className="flex flex-col items-center justify-center">
-                                            <span className="text-[1.1rem] font-[600]">
-                                              {user?.following?.length}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                              following
-                                            </span>
-                                          </div>
-                                        </div>
-                                        {/* POSTS SECTION */}
-                                        <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                                          {hoverCardImages.map((img, index) => (
-                                            <img
-                                              key={index}
-                                              src={img}
-                                              alt="Hover Image"
-                                              className="h-[8.19rem] object-cover aspect-square"
-                                            />
-                                          ))}
-                                        </div>
-                                        {/* FOLLOW & MESSAGE BUTTON */}
-                                        <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                                          <Button
-                                            type="button"
-                                            className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                          >
-                                            <UserPlus size={50} />
-                                            Follow
-                                          </Button>
-                                          <Button
-                                            type="button"
-                                            className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                          >
-                                            <MessageCircle size={50} />
-                                            Message
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </HoverCardContent>
-                                  </HoverCard>
+                                  <UserHoverCard user={user}>
+                                    <Avatar
+                                      className={`w-10 h-10 cursor-pointer ${
+                                        user?.profilePhoto === ""
+                                          ? "bg-gray-300"
+                                          : "bg-none"
+                                      } `}
+                                    >
+                                      <AvatarImage
+                                        src={user?.profilePhoto}
+                                        alt={user?.fullName}
+                                      />
+                                    </Avatar>
+                                  </UserHoverCard>
                                   {/* USERNAME */}
                                   <div className="flex flex-col items-start justify-center">
                                     <div className="flex items-center gap-2 font-[600] text-[0.9rem]">
-                                      <HoverCard className="relative">
-                                        <HoverCardTrigger asChild>
-                                          <div className="flex flex-col">
-                                            <span className="hover:text-gray-500 cursor-pointer">
-                                              {user?.username}
-                                            </span>
-                                            <span className="text-gray-500 text-xs">
-                                              {user?.fullName}
-                                            </span>
-                                          </div>
-                                        </HoverCardTrigger>
-                                        <HoverCardContent className="absolute -left-9.5 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white">
-                                          {/* HOVER CONTENT MAIN WRAPPER */}
-                                          <div className="w-full flex flex-col items-center justify-center">
-                                            {/* HEADER */}
-                                            <div className="px-6 py-6 w-full flex items-center gap-3">
-                                              {/* AVATAR */}
-                                              <div>
-                                                <Avatar
-                                                  className={`w-10 h-10 cursor-pointer ${
-                                                    user?.profilePhoto === ""
-                                                      ? "bg-gray-300"
-                                                      : "bg-none"
-                                                  } `}
-                                                >
-                                                  <AvatarImage
-                                                    src={user?.profilePhoto}
-                                                    alt={user?.fullName}
-                                                  />
-                                                </Avatar>
-                                              </div>
-                                              {/* USER INFO */}
-                                              <div className="flex flex-col items-start justify-center">
-                                                <span className="flex items-center gap-2 font-[600] text-[1rem]">
-                                                  {user?.username}
-                                                </span>
-                                                <span className="text-gray-500 text-xs">
-                                                  {user?.fullName}
-                                                </span>
-                                              </div>
-                                            </div>
-                                            {/* PROFILE INFO */}
-                                            <div className="w-full flex items-center justify-evenly pb-4">
-                                              <div className="flex flex-col items-center justify-center">
-                                                <span className="text-[1.1rem] font-[600]">
-                                                  {user?.posts?.length}
-                                                </span>
-                                                <span className="text-sm text-gray-500">
-                                                  posts
-                                                </span>
-                                              </div>
-                                              <div className="flex flex-col items-center justify-center">
-                                                <span className="text-[1.1rem] font-[600]">
-                                                  {user?.followers?.length}
-                                                </span>
-                                                <span className="text-sm text-gray-500">
-                                                  followers
-                                                </span>
-                                              </div>
-                                              <div className="flex flex-col items-center justify-center">
-                                                <span className="text-[1.1rem] font-[600]">
-                                                  {user?.following?.length}
-                                                </span>
-                                                <span className="text-sm text-gray-500">
-                                                  following
-                                                </span>
-                                              </div>
-                                            </div>
-                                            {/* POSTS SECTION */}
-                                            <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
-                                              {hoverCardImages.map(
-                                                (img, index) => (
-                                                  <img
-                                                    key={index}
-                                                    src={img}
-                                                    alt="Hover Image"
-                                                    className="h-[8.19rem] object-cover aspect-square"
-                                                  />
-                                                )
-                                              )}
-                                            </div>
-                                            {/* FOLLOW & MESSAGE BUTTON */}
-                                            <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
-                                              <Button
-                                                type="button"
-                                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                              >
-                                                <UserPlus size={50} />
-                                                Follow
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer w-1/2"
-                                              >
-                                                <MessageCircle size={50} />
-                                                Message
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        </HoverCardContent>
-                                      </HoverCard>
+                                      <UserHoverCard user={user}>
+                                        <div className="flex flex-col">
+                                          <span className="hover:text-gray-500 cursor-pointer">
+                                            {user?.username}
+                                          </span>
+                                          <span className="text-gray-500 text-xs">
+                                            {user?.fullName}
+                                          </span>
+                                        </div>
+                                      </UserHoverCard>
                                     </div>
                                   </div>
                                 </div>

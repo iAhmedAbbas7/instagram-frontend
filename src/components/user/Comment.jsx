@@ -1,41 +1,42 @@
 // <= IMPORTS =>
 import { Heart } from "lucide-react";
+import UserHoverCard from "../shared/UserHoverCard";
 import { getShortRelativeTime } from "@/utils/time";
+import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const Comment = ({ comment }) => {
   // POST CREATION TIME STRING # 1
   const shortTime = getShortRelativeTime(comment.createdAt);
   // AVATAR FALLBACK MANAGEMENT
-  const fullName = comment?.author?.fullName || "";
-  // DERIVING PARTS OF THE FULLNAME
-  const fullNameParts = fullName.split(" ").filter(Boolean);
-  // GETTING INITIALS OF THE FULLNAME
-  const fullNameInitials =
-    fullNameParts.length > 1
-      ? (
-          fullNameParts[0][0] + fullNameParts[fullNameParts.length - 1][0]
-        ).toUpperCase()
-      : fullName.slice(0, 2).toUpperCase();
+  const fullNameInitials = comment?.author?.fullName
+    ? getFullNameInitials(comment?.author?.fullName)
+    : "";
   return (
     <div className="flex items-start gap-3">
       {/* AVATAR */}
-      <Avatar
-        className={`w-10 h-10 cursor-pointer ${
-          comment?.author?.profilePhoto === "" ? "bg-gray-300" : "bg-none"
-        } `}
-      >
-        <AvatarImage
-          src={comment?.author?.profilePhoto}
-          alt={comment?.author?.fullName}
-        />
-        <AvatarFallback>{fullNameInitials}</AvatarFallback>
-      </Avatar>
+      <UserHoverCard user={comment?.author}>
+        <Avatar
+          className={`w-10 h-10 cursor-pointer ${
+            comment?.author?.profilePhoto === "" ? "bg-gray-300" : "bg-none"
+          } `}
+        >
+          <AvatarImage
+            src={comment?.author?.profilePhoto}
+            alt={comment?.author?.fullName}
+          />
+          <AvatarFallback>{fullNameInitials}</AvatarFallback>
+        </Avatar>
+      </UserHoverCard>
       {/* COMMENT TEXT SECTION */}
       <div>
         {/* AUTHOR USERNAME & TEXT */}
         <div className="font-[600] text-[0.9rem]">
-          {comment?.author?.username}
+          <UserHoverCard user={comment?.author}>
+            <span className="hover:text-gray-500 cursor-pointer">
+              {comment?.author?.username}
+            </span>
+          </UserHoverCard>
           <span className="font-normal ml-3">{comment?.text}</span>
         </div>
         {/* COMMENT ACTIONS */}
