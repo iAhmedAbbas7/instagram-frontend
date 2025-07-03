@@ -122,6 +122,12 @@ const PostPage = () => {
     { id: 7, label: "About this Account" },
     { id: 8, label: "Cancel" },
   ];
+  // SCROLL TO TOP EFFECT ON OST ID CHANGE
+  useEffect(() => {
+    if (post?._id) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [post?._id]);
   // FETCHING LIKES FOR THE POST ON RENDER
   useEffect(() => {
     if (!post?._id) return;
@@ -895,7 +901,7 @@ const PostPage = () => {
         </section>
         {/* OTHER POSTS SECTION */}
         <section>
-          <OtherPosts authorId={post?.author?._id} excludedId={post?._id} />
+          <OtherPosts author={post?.author} excludedId={post?._id} />
         </section>
       </section>
     </section>

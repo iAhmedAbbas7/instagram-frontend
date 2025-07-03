@@ -108,13 +108,13 @@ const UserHoverCard = ({ user, children }) => {
       >
         {children}
       </HoverCardTrigger>
-      <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[400px] shadow-2xl bg-white z-[50]">
+      <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[380px] shadow-2xl bg-white z-[50]">
         {/* HOVER CONTENT MAIN WRAPPER */}
         <div className="w-full flex flex-col items-center justify-center">
           {/* HEADER */}
-          <div className="px-6 py-6 w-full flex items-center gap-3">
+          <div className="px-6 py-3 w-full flex items-center gap-3">
             {/* AVATAR */}
-            <div>
+            <div onClick={() => navigate(`/home/profile/${user._id}`)}>
               <Avatar
                 className={`w-10 h-10 cursor-pointer ${
                   user?.profilePhoto === "" ? "bg-gray-300" : "bg-none"
@@ -126,14 +126,17 @@ const UserHoverCard = ({ user, children }) => {
             </div>
             {/* USER INFO */}
             <div className="flex flex-col items-start justify-center">
-              <span className="flex items-center gap-2 font-[600] text-[1rem]">
+              <span
+                onClick={() => navigate(`/home/profile/${user._id}`)}
+                className="flex items-center gap-2 font-[600] text-[1rem] cursor-pointer hover:text-gray-500"
+              >
                 {user?.username}
               </span>
               <span className="text-gray-500 text-xs">{user?.fullName}</span>
             </div>
           </div>
           {/* PROFILE INFO */}
-          <div className="w-full flex items-center justify-evenly pb-4">
+          <div className="w-full flex items-center justify-evenly">
             {/* POSTS */}
             <div className="flex flex-col items-center justify-center">
               <span className="text-[1.1rem] font-[600]">
@@ -157,7 +160,7 @@ const UserHoverCard = ({ user, children }) => {
             </div>
           </div>
           {/* POSTS SECTION */}
-          <div className="w-full flex items-center justify-center gap-[0.2rem] my-4">
+          <div className="w-full flex items-center justify-center gap-[0.2rem]">
             {/* IF LOADING */}
             {isLoading && (
               <div className="w-full h-[9rem] flex items-center justify-center">
@@ -169,10 +172,11 @@ const UserHoverCard = ({ user, children }) => {
               <div className="w-full flex items-center justify-start gap-[0.2rem] my-4">
                 {data?.map((post) => (
                   <img
+                    onClick={() => navigate(`/home/post/${post._id}`)}
                     key={post?._id}
                     src={post?.image}
                     alt="Post Image"
-                    className="h-[8.19rem] object-cover aspect-square"
+                    className="h-[7.78rem] object-cover aspect-square cursor-pointer"
                   />
                 ))}
               </div>
@@ -188,7 +192,7 @@ const UserHoverCard = ({ user, children }) => {
             )}
           </div>
           {/* FOLLOW & MESSAGE BUTTON */}
-          <div className="w-full pt-2 pb-4 flex items-center justify-center gap-3 px-5">
+          <div className="w-full pb-4 flex items-center justify-center gap-3 px-5">
             {/* IF THE USER IS THE CURRENT USER */}
             {user?._id === currentUser._id && (
               <Button
