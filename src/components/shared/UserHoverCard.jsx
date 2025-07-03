@@ -50,7 +50,7 @@ const UserHoverCard = ({ user, children }) => {
     ? getFullNameInitials(user?.fullName)
     : "";
   // FETCHING USER POSTS WHEN THE HOVER CARD IS OPEN & CACHING IT FOR 5 MINUTES
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["recentUserPosts", user?._id],
     queryFn: () =>
       axiosClient
@@ -100,7 +100,6 @@ const UserHoverCard = ({ user, children }) => {
       setFollowLoading(false);
     }
   };
-  console.log(error);
   return (
     <HoverCard open={open} onOpenChange={setOpen}>
       <HoverCardTrigger

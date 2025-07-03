@@ -95,7 +95,7 @@ const NotificationSidebar = ({ isOpen, onClose, offset, justOpened }) => {
         {/* BUCKET HEADING */}
         <h4 className="px-4 py-2 text-[1.2rem] font-semibold">{label}</h4>
         {/* NOTIFICATIONS LIST */}
-        <ul className="w-full flex items-start justify-start">
+        <ul className="w-full flex flex-col items-start justify-start">
           {arr.map((n, i) => {
             // ACTING USER OF THE NOTIFICATION
             const actingUser =

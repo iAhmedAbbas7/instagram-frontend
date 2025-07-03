@@ -161,14 +161,14 @@ const SocketListener = () => {
             })
           );
         }
-        // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
-        dispatch(setLikeNotifications(notification));
       }
       // TOASTING LIVE NOTIFICATION TO THE POST OWNER ON LIKE EVENT
       if (
         notification?.type === "like" &&
         notification?.postAuthorId === currentUserId
       ) {
+        // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
+        dispatch(setLikeNotifications(notification));
         toast(
           <div className="flex items-center gap-2">
             <FaRegHeart size={25} className="text-red-500" />
@@ -209,15 +209,15 @@ const SocketListener = () => {
               posts: updatedUserPosts,
             })
           );
-          // DISPATCHING THE NOTIFICATION IN THE NOTIFICATION SLICE
-          dispatch(setCommentNotifications(notification));
         }
       }
-      // TOASTING LIVE NOTIFICATION TO THE POST OWNER ON LIKE EVENT
+      // TOASTING & DISPATCHING NOTIFICATION TO THE POST OWNER ON COMMENT EVENT
       if (
         notification?.postAuthorId === currentUserId &&
         notification?.commentingUser?._id !== currentUserId
       ) {
+        // DISPATCHING THE NOTIFICATION IN THE NOTIFICATION SLICE
+        dispatch(setCommentNotifications(notification));
         toast(
           <div className="flex items-center gap-2">
             <MessageSquareMore size={25} className="text-red-500" />
