@@ -1,16 +1,12 @@
 // <= IMPORTS =>
 import { Loader2 } from "lucide-react";
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setSinglePost } from "@/redux/postSlice";
 import { FaHeart, FaMessage } from "react-icons/fa6";
 import useGetOtherPosts from "@/hooks/useGetOtherPosts";
 
 const OtherPosts = ({ author, excludedId }) => {
   // NAVIGATION
   const navigate = useNavigate();
-  // DISPATCH
-  const dispatch = useDispatch();
   // USING GET OTHER POSTS HOOK
   const { loading, posts } = useGetOtherPosts(excludedId, author._id);
   // IF LOADING
@@ -60,7 +56,7 @@ const OtherPosts = ({ author, excludedId }) => {
                 {/* IMAGE OVERLAY */}
                 <div
                   onClick={() => {
-                    dispatch(setSinglePost(post));
+                    navigate(`/home/post/${post._id}`);
                   }}
                   className="absolute inset-0 bg-black/70 opacity-0 rounded-sm flex items-center justify-center group-hover:opacity-100 transition-opacity duration-300"
                 >

@@ -5,7 +5,6 @@ import { Button } from "../ui/button";
 import OtherPosts from "./OtherPosts";
 import useTitle from "@/hooks/useTitle";
 import { setUser } from "@/redux/authSlice";
-import { useEffect, useState } from "react";
 import axiosClient from "@/utils/axiosClient";
 import { formatDistanceStrict } from "date-fns";
 import { setSinglePost } from "@/redux/postSlice";
@@ -15,6 +14,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
 import useGetSinglePost from "@/hooks/useGetSinglePost";
 import { useNavigate, useParams } from "react-router-dom";
+import useInfiniteComments from "@/hooks/useInfiniteComments";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa6";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -67,14 +68,10 @@ const PostPage = () => {
   const [likesDialogOpen, setLikesDialogOpen] = useState(false);
   // POST LIKES STATE
   const [postLikes, setPostLikes] = useState(post?.likes?.length);
-  // POST COMMENTS STATE
-  const [postComments, setPostComments] = useState(post?.comments);
   // COMMENT POSTING LOADING STATE
   const [postCommentLoading, setPostCommentLoading] = useState(false);
   // DELETE POST DIALOG STATE
   const [deletePostDialogOpen, setShowDeletePostDialogOpen] = useState(false);
-  // POST COMMENTS COUNT STATE
-  const [commentsLength, setCommentsLength] = useState(post?.comments?.length);
   // LIKED POST STATE
   const [liked, setLiked] = useState(post?.likes?.includes(user?._id) || false);
   // BOOKMARK STATE
@@ -154,10 +151,8 @@ const PostPage = () => {
   // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE, COMMENTS LENGTH & OTHERS
   useEffect(() => {
     if (!post || !user) return;
-    setPostComments(post?.comments);
     setPostLikes(post?.likes?.length);
     setLiked(post?.likes?.includes(user._id));
-    setCommentsLength(post?.comments?.length);
     setBookmarked(user?.bookmarks?.includes(post?._id));
     setIsAuthorFollowing(post?.author?.following.includes(user?._id));
     setIsFollowingAuthor(user?.following?.includes(post?.author?._id));
@@ -187,6 +182,34 @@ const PostPage = () => {
       roundingMethod: "floor",
       addSuffix: true,
     });
+  // USING INFINITE COMMENTS HOOK
+  const {
+    isLoading,
+    hasNextPage,
+    postComment,
+    totalComments,
+    fetchNextPage,
+    data: commentPages,
+    isFetchingNextPage,
+  } = useInfiniteComments(postId);
+  // SETTING OBSERVER FOR TRIGGERING RE-FETCH ON SCROLL
+  const observer = useRef();
+  // SETTING REF ON LAST COMMENT OF EACH PAGE FETCH
+  const lastCommentRef = useCallback(
+    (node) => {
+      if (isFetchingNextPage) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isFetchingNextPage, hasNextPage, fetchNextPage]
+  );
+  // GETTING ALL COMMENTS
+  const allComments = commentPages?.pages.flatMap((p) => p.comments) ?? [];
   // EMPTY COMMENT HANDLER
   const emptyCommentHandler = (e) => {
     // INPUT TEXT
@@ -204,26 +227,12 @@ const PostPage = () => {
     setPostCommentLoading(true);
     // MAKING REQUEST
     try {
-      const response = await axiosClient.post(
-        `/post/${post._id}/postComment`,
-        { text: comment },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await postComment.mutateAsync(comment);
       // IF RESPONSE SUCCESS
       if (response.data.success) {
-        // CREATING UPDATED COMMENTS DATA
-        const updatedCommentsData = [response.data.comment, ...postComments];
-        // SETTING THE UPDATED COMMENTS DATA
-        setPostComments(updatedCommentsData);
-        // UPDATING THE COMMENTS LENGTH
-        setCommentsLength(updatedCommentsData.length);
         // TOASTING SUCCESS MESSAGE
-        toast.success(response?.data?.message);
-        // CLEARING THE COMMENT INPUT
+        toast.success("Comment Posted!");
+        // CLEARING INPUT FIELD
         setComment("");
       }
     } catch (error) {
@@ -632,17 +641,34 @@ const PostPage = () => {
                 </span>
               </div>
               {/* IF NO COMMENTS */}
-              {postComments?.length <= 0 && (
+              {!isLoading && allComments?.length <= 0 && (
                 <div className="flex items-center justify-center h-full w-full">
                   <span className="text-gray-500 text-sm">
                     No comments yet. Be the first to comment!
                   </span>
                 </div>
               )}
-              {/* IF COMMENTS AVAILABLE */}
-              {postComments?.map((comment) => (
-                <Comment key={comment._id} comment={comment} />
-              ))}
+              {/* LOADING & DISPLAYING COMMENTS */}
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center py-4">
+                  <Loader2 size={30} className="animate-spin text-gray-500" />
+                </div>
+              ) : (
+                allComments?.map((c, idx) => {
+                  const isLast = idx === allComments.length - 1;
+                  return (
+                    <div ref={isLast ? lastCommentRef : null} key={c._id}>
+                      <Comment comment={c} />
+                    </div>
+                  );
+                })
+              )}
+              {/* FETCH TRIGGER FOR NEW FETCH */}
+              {isFetchingNextPage && (
+                <div className="w-full flex items-center justify-center py-4">
+                  <Loader2 size={30} className="animate-spin text-gray-500" />
+                </div>
+              )}
             </div>
             {/* SECTION FOOTERS */}
             <section className="w-full flex flex-col items-center justify-center ">
@@ -828,9 +854,9 @@ const PostPage = () => {
                 </Dialog>
                 {/* POST COMMENTS */}
                 <span className="w-full text-sm text-gray-500">
-                  {commentsLength === 0 && "No comments yet"}
-                  {commentsLength === 1 && "1 comment"}
-                  {commentsLength > 1 && `${commentsLength} comments`}
+                  {totalComments === 0 && "No comments yet"}
+                  {totalComments === 1 && "1 comment"}
+                  {totalComments > 1 && `${totalComments} comments`}
                 </span>
                 {/* POST TIME */}
                 <span className="w-full text-sm text-gray-500">{postTime}</span>
