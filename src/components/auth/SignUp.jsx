@@ -1,12 +1,13 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
-import { useState } from "react";
 import { Button } from "../ui/button";
+import debounce from "lodash.debounce";
 import useTitle from "@/hooks/useTitle";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { Loader2, LogIn, User2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
+import { CheckCircle2, Loader2, LogIn, User2, X, XCircle } from "lucide-react";
 
 const SignUp = () => {
   // USE TITLE HOOK
@@ -22,6 +23,45 @@ const SignUp = () => {
     email: "",
     password: "",
   });
+  // USERNAME AVAILABILITY STATE
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  // USERNAME AVAILABILITY LOADING STATE
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  // USERNAME AVAILABILITY DEBOUNCED CHECK
+  const checkUsername = useMemo(
+    () =>
+      debounce(async (username) => {
+        try {
+          const response = await axiosClient.get(
+            `/user/checkUsername?username=${username}`
+          );
+          // SETTING USERNAME AVAILABILITY BASED ON RESPONSE RETURNED
+          setUsernameAvailable(response.data.available);
+        } catch {
+          // SETTING USERNAME AVAILABILITY TO NULL ON ERROR
+          setUsernameAvailable(null);
+        } finally {
+          // LOADING STATE
+          setCheckingUsername(false);
+        }
+      }, 500),
+    []
+  );
+  // EFFECT TO CHECK USERNAME AVAILABILITY
+  useEffect(() => {
+    // USERNAME
+    const username = input.username.trim();
+    // IF NO USERNAME
+    if (!username) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      return;
+    }
+    setCheckingUsername(true);
+    checkUsername(username);
+  }, [checkUsername, input.username]);
+  // CLEANUP EFFECT ON COMPONENT UNMOUNT
+  useEffect(() => checkUsername.cancel(), [checkUsername]);
   // CHANGE EVENT HANDLER
   const changeEventHandler = (e) => {
     // UPDATING THE STATE
@@ -35,6 +75,10 @@ const SignUp = () => {
     if (!input.fullName || !input.username || !input.email || !input.password) {
       toast.error("All Fields are Required!");
       return;
+    }
+    // IF USERNAME IS NOT AVAILABLE
+    if (usernameAvailable === false) {
+      toast.error("This Username is already Taken!");
     }
     // MAKING REQUEST
     try {
@@ -146,6 +190,49 @@ const SignUp = () => {
                 >
                   <X size={15} />
                 </span>
+              )}
+              {/* USERNAME CHECK */}
+              {checkingUsername && (
+                <div className="mt-4 p-1 flex items-center gap-2 bg-gray-200 rounded-sm w-full">
+                  <span>
+                    <Loader2 size={15} className="animate-spin text-gray-700" />
+                  </span>
+                  <span className="text-sm  text-gray-700 animate-pulse">
+                    Checking Username{" "}
+                    <span className="font-semibold">
+                      &quot;{input.username}&quot;
+                    </span>
+                  </span>
+                </div>
+              )}
+              {/* USERNAME AVAILABLE */}
+              {!checkingUsername && usernameAvailable === true && (
+                <div className="flex p-1 mt-4 bg-green-200 items-center gap-2 text-sm text-green-700 rounded-sm">
+                  <span>
+                    <CheckCircle2 size={15} />
+                  </span>
+                  <span>
+                    Username{" "}
+                    <span className="font-semibold">
+                      &quot;{input.username}&quot;
+                    </span>{" "}
+                    is Available
+                  </span>
+                </div>
+              )}
+              {!checkingUsername && usernameAvailable === false && (
+                <div className="flex p-1 mt-4 items-center gap-2 bg-red-200 rounded-sm text-sm text-red-700">
+                  <span>
+                    <XCircle size={15} />
+                  </span>
+                  <span>
+                    Username{" "}
+                    <span className="font-semibold">
+                      &quot;{input.username}&quot;
+                    </span>{" "}
+                    is not Available
+                  </span>
+                </div>
               )}
             </div>
             {/* EMAIL */}
