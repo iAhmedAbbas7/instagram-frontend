@@ -21,6 +21,11 @@ const notificationSlice = createSlice({
         state.likeNotifications = state.likeNotifications.filter(
           (notif) => notif.userId !== action.payload.userId
         );
+        state.hasUnread =
+          state.likeNotifications.length +
+            state.commentNotifications.length +
+            state.followNotifications.length >
+          0;
       }
     },
     setCommentNotifications: (state, action) => {
@@ -46,10 +51,15 @@ const notificationSlice = createSlice({
         state.followNotifications = state.followNotifications.filter(
           (notif) =>
             !(
-              notif.followingUserId !== action.payload.followingUserId &&
-              notif.followedUserId !== action.payload.followedUserId
+              notif.followingUserId === action.payload.followingUserId &&
+              notif.followedUserId === action.payload.followedUserId
             )
         );
+        state.hasUnread =
+          state.likeNotifications.length +
+            state.commentNotifications.length +
+            state.followNotifications.length >
+          0;
       }
     },
     markAllAsRead: (state) => {
@@ -78,6 +88,11 @@ const notificationSlice = createSlice({
         default:
           break;
       }
+      state.hasUnread =
+        state.likeNotifications.length +
+          state.commentNotifications.length +
+          state.followNotifications.length >
+        0;
     },
     clearAllNotifications: (state) => {
       state.likeNotifications = [];
