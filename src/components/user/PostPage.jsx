@@ -52,6 +52,8 @@ const PostPage = () => {
   const [likes, setLikes] = useState([]);
   // COMMENT STATE
   const [comment, setComment] = useState("");
+  // INDEX STATE FOR LIKES FETCHING
+  const [nextIndex, setNextIndex] = useState(0);
   // FOLLOWING STATE MANAGEMENT FOR LIKE USERS
   const [followingMap, setFollowingMap] = useState({});
   // LIKES LOADING STATE
@@ -119,34 +121,56 @@ const PostPage = () => {
     { id: 7, label: "About this Account" },
     { id: 8, label: "Cancel" },
   ];
-  // SCROLL TO TOP EFFECT ON OST ID CHANGE
+  // NEXT INDEX REF
+  const nextIndexRef = useRef(nextIndex);
+  // LIKES LOADING REF
+  const likesLoadingRef = useRef(likesLoading);
+  // NEXT INDEX REF EFFECT
+  useEffect(() => {
+    nextIndexRef.current = nextIndex;
+  }, [nextIndex]);
+  // LIKES LOADING REF EFFECT
+  useEffect(() => {
+    likesLoadingRef.current = likesLoading;
+  }, [likesLoading]);
+  // LIKES LOADING HANDLER
+  const loadLikesPage = useCallback(async () => {
+    // IF LIKES LOADING OR NO MORE LIKES
+    if (likesLoadingRef.current || nextIndexRef.current === null) return;
+    // LOADING STATE
+    setLikesLoading(true);
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.get(`/post/${postId}/likes`, {
+        params: { lastIndex: nextIndexRef.current },
+      });
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // SETTING LIKES
+        setLikes((prev) => [...prev, ...response.data.likes]);
+        // SETTING NEXT INDEX FOR ANOTHER FETCH
+        setNextIndex(response.data.index);
+      }
+    } catch (error) {
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Fetch Likes!", error);
+    } finally {
+      // LOADING STATE
+      setLikesLoading(false);
+    }
+  }, [postId]);
+  // RESETTING THE LIKES WHEN LIKES DIALOG OPENS
+  useEffect(() => {
+    if (!likesDialogOpen) return;
+    setLikes([]);
+    setNextIndex(0);
+    loadLikesPage();
+  }, [likesDialogOpen, loadLikesPage]);
+  // SCROLL TO TOP EFFECT ON POST ID CHANGE
   useEffect(() => {
     if (post?._id) {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
-  }, [post?._id]);
-  // FETCHING LIKES FOR THE POST ON RENDER
-  useEffect(() => {
-    if (!post?._id) return;
-    const fetchPostLikes = async () => {
-      // LIKES LOADING STATE
-      setLikesLoading(true);
-      try {
-        const response = await axiosClient.get(`/post/${post?._id}/likes`);
-        // IF RESPONSE SUCCESS
-        if (response.data.success) {
-          // SETTING POST LIKES
-          setLikes(response.data.likes);
-        }
-      } catch (error) {
-        // LOGGING ERROR MESSAGE
-        console.log(error);
-      } finally {
-        // LIKES LOADING STATE
-        setLikesLoading(false);
-      }
-    };
-    fetchPostLikes();
   }, [post?._id]);
   // SYNCHRONIZING THE POST LIKES, COMMENTS, LIKED STATE, COMMENTS LENGTH & OTHERS
   useEffect(() => {
@@ -192,24 +216,32 @@ const PostPage = () => {
     data: commentPages,
     isFetchingNextPage,
   } = useInfiniteComments(postId);
-  // SETTING OBSERVER FOR TRIGGERING RE-FETCH ON SCROLL
-  const observer = useRef();
+  // SETTING OBSERVER FOR TRIGGERING RE-FETCH COMMENTS ON SCROLL
+  const commentObserver = useRef();
   // SETTING REF ON LAST COMMENT OF EACH PAGE FETCH
   const lastCommentRef = useCallback(
     (node) => {
       if (isFetchingNextPage) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
+      if (commentObserver.current) commentObserver.current.disconnect();
+      commentObserver.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasNextPage) {
           fetchNextPage();
         }
       });
-      if (node) observer.current.observe(node);
+      if (node) commentObserver.current.observe(node);
     },
     [isFetchingNextPage, hasNextPage, fetchNextPage]
   );
   // GETTING ALL COMMENTS
   const allComments = commentPages?.pages.flatMap((p) => p.comments) ?? [];
+  // SCROLL HANDLER TO FETCH MORE LIKES
+  const onLikesScroll = (e) => {
+    // SETTING TRIGGER ELEMENT
+    const element = e.currentTarget;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 100) {
+      loadLikesPage();
+    }
+  };
   // EMPTY COMMENT HANDLER
   const emptyCommentHandler = (e) => {
     // INPUT TEXT
@@ -260,30 +292,10 @@ const PostPage = () => {
     // UPDATING LIKES COUNT
     setPostLikes(newLikesCount);
     try {
-      // LIKES LOADING STATE
-      setLikesLoading(true);
       // MAKING REQUEST
-      const response = await axiosClient.get(`/post/likeOrUnlike/${post._id}`, {
+      await axiosClient.get(`/post/likeOrUnlike/${post._id}`, {
         withCredentials: true,
       });
-      // IF RESPONSE SUCCESS
-      if (response.data.success) {
-        // REFETCHING THE LIKES FOR THE POST
-        try {
-          const response = await axiosClient.get(`/post/${post?._id}/likes`);
-          // IF RESPONSE SUCCESS
-          if (response.data.success) {
-            // SETTING POST LIKES
-            setLikes(response.data.likes);
-          }
-        } catch (error) {
-          // LOGGING ERROR MESSAGE
-          console.log(error);
-        } finally {
-          // LIKES LOADING STATE
-          setLikesLoading(false);
-        }
-      }
     } catch (error) {
       // REVERTING CHANGES TO ORIGINAL DATA ON ERROR
       setLiked(originalLiked);
@@ -751,7 +763,10 @@ const PostPage = () => {
                         </h1>
                       </div>
                       {/* LIKES SECTION */}
-                      <div className="w-full flex flex-1 flex-col gap-3 px-5 py-4 overflow-y-auto">
+                      <div
+                        className="w-full flex flex-1 flex-col gap-3 px-5 py-4 overflow-y-auto"
+                        onScroll={onLikesScroll}
+                      >
                         {likesLoading ? (
                           <div className="w-full h-full flex items-center justify-center">
                             <Loader2
