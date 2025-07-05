@@ -26,12 +26,14 @@ const useGetInfinitePosts = (pageSize = 10) => {
       );
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // FETCHED POSTS
+        const fetchedPosts = response.data.posts;
         if (page === 0) {
-          dispatch(setPosts(response.data.posts));
+          dispatch(setPosts(fetchedPosts));
         } else {
-          dispatch(appendPosts(response.data.posts));
+          dispatch(appendPosts(fetchedPosts));
         }
-        setHasMore(response.data.length === pageSize);
+        setHasMore(fetchedPosts.length === limitNumber);
       }
     } catch (error) {
       console.error("Failed to Fetch Posts!", error);
@@ -39,7 +41,7 @@ const useGetInfinitePosts = (pageSize = 10) => {
       // LOADING STATE
       setLoading(false);
     }
-  }, [dispatch, limitNumber, skipNumber, pageSize, page]);
+  }, [dispatch, limitNumber, skipNumber, page]);
   // EFFECT TO FETCH POSTS
   useEffect(() => {
     fetchPosts();
