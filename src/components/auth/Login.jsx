@@ -21,7 +21,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   // STATE MANAGEMENT
   const [input, setInput] = useState({
-    email: "",
+    identifier: "",
     password: "",
   });
   // CHANGE EVENT HANDLER
@@ -34,7 +34,7 @@ const Login = () => {
     // PREVENTING PAGE REFRESH
     e.preventDefault();
     // DATA VALIDATION
-    if (!input.email || !input.password) {
+    if (!input.identifier || !input.password) {
       toast.error("All Fields are Required!");
       return;
     }
@@ -95,25 +95,25 @@ const Login = () => {
             onSubmit={loginHandler}
             className="flex flex-col items-center justify-center gap-4 w-full mt-2"
           >
-            {/* EMAIL */}
+            {/* IDENTIFIER */}
             <div className="w-full relative">
               <input
-                id="email"
-                name="email"
-                value={input.email}
+                id="identifier"
+                name="identifier"
+                value={input.identifier}
                 onChange={changeEventHandler}
                 type="text"
-                placeholder="Email"
+                placeholder="Username or Email"
                 className="w-full border-2 border-gray-200 outline-none focus:outline-none rounded-md bg px-4 py-2 text-gray-500"
                 spellCheck="false"
                 autoComplete="off"
                 autoCorrect="off"
               />
               {/* INPUT CLEAR BUTTON */}
-              {input.email !== "" && (
+              {input.identifier !== "" && (
                 <span
                   title="Clear Field"
-                  onClick={() => setInput({ ...input, email: "" })}
+                  onClick={() => setInput({ ...input, identifier: "" })}
                   className="rounded-full absolute top-[0.6rem] right-2 bg-gray-200 text-sky-400 cursor-pointer p-1 hover:bg-gray-100"
                 >
                   <X size={15} />
