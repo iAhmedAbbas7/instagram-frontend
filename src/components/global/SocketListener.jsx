@@ -2,11 +2,12 @@
 import { toast } from "sonner";
 import { io } from "socket.io-client";
 import { useEffect, useRef } from "react";
-import { setPosts } from "@/redux/postSlice";
 import { FaRegHeart } from "react-icons/fa6";
 import axiosClient from "@/utils/axiosClient";
 import { useSocketRef } from "@/context/SocketContext";
 import { useDispatch, useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
+import { setPosts, setSinglePost } from "@/redux/postSlice";
 import { useLocation, useNavigate } from "react-router-dom";
 import { setChatUser, setMessages, setOnlineUsers } from "@/redux/chatSlice";
 import { MessageCircleMore, MessageSquareMore, UserPlus2 } from "lucide-react";
@@ -30,7 +31,7 @@ const SocketListener = () => {
   // GETTING MESSAGES FROM THE CHAT SLICE
   const { messages } = useSelector((store) => store.chat);
   // GETTING POSTS FROM POST SLICE
-  const { posts } = useSelector((store) => store.post);
+  const { posts, singlePost } = useSelector((store) => store.post);
   // DISPATCH
   const dispatch = useDispatch();
   // LOCATION
@@ -41,6 +42,8 @@ const SocketListener = () => {
   const onlineUsersRef = useRef([]);
   // SOCKET REF
   const socketRef = useSocketRef();
+  // QUERY CLIENT
+  const queryClient = useQueryClient();
   // MESSAGES ROUTE PATH
   const isOnMessagesPage = location.pathname.startsWith("/home/chat");
   // SETTING CURRENT USER ID
@@ -161,6 +164,20 @@ const SocketListener = () => {
             })
           );
         }
+        // UPDATING THE SINGLE POST LIKES
+        if (notification?.postId === singlePost._id) {
+          dispatch(
+            setSinglePost({
+              ...singlePost,
+              likes:
+                notification?.type === "like"
+                  ? [...singlePost.likes, notification?.userId]
+                  : singlePost.likes.filter(
+                      (id) => id !== notification?.userId
+                    ),
+            })
+          );
+        }
       }
       // DISPATCHING NOTIFICATIONS FOR THE POST OWNER
       if (notification.postAuthorId === currentUserId) {
@@ -213,9 +230,26 @@ const SocketListener = () => {
             })
           );
         }
+        // UPDATING THE SINGLE POST COMMENTS
+        queryClient.setQueryData(["comments", notification?.postId], (old) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page, idx) =>
+            idx === 0
+              ? {
+                  ...page,
+                  comments: [comment, ...page.comments],
+                  totalComments: page.totalComments + 1,
+                }
+              : page
+          );
+          return { ...old, pages: newPages };
+        });
       }
       // DISPATCHING NOTIFICATIONS FOR THE POST OWNER
-      if (notification.postAuthorId === currentUserId) {
+      if (
+        notification.postAuthorId === currentUserId &&
+        notification?.commentingUser?._id !== currentUserId
+      ) {
         // DISPATCHING THE NOTIFICATION IN THE NOTIFICATION SLICE
         dispatch(setCommentNotifications(notification));
       }
@@ -298,14 +332,16 @@ const SocketListener = () => {
     };
   }, [
     user,
-    socketRef,
-    messages,
-    dispatch,
-    navigate,
-    isOnMessagesPage,
     posts,
-    currentUserId,
+    messages,
+    navigate,
+    dispatch,
+    socketRef,
+    singlePost,
     userProfile,
+    queryClient,
+    currentUserId,
+    isOnMessagesPage,
   ]);
 };
 
