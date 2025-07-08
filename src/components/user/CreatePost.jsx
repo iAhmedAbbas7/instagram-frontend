@@ -1,14 +1,14 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { useRef, useState } from "react";
 import { setPosts } from "@/redux/postSlice";
 import axiosClient from "@/utils/axiosClient";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { useDispatch, useSelector } from "react-redux";
 import { getImageDataURI } from "@/utils/getImageDataURI";
-import { Image, Loader2, PlusSquareIcon, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Image, Loader2, MapPin, PlusSquareIcon, X } from "lucide-react";
 
 const CreatePost = ({ open, setOpen }) => {
   // CURRENT USER CREDENTIALS
@@ -21,9 +21,49 @@ const CreatePost = ({ open, setOpen }) => {
   const dispatch = useDispatch();
   // STATE MANAGEMENT
   const [file, setFile] = useState("");
+  const [query, setQuery] = useState("");
   const [caption, setCaption] = useState("");
-  const [imagePreview, setImagePreview] = useState(null);
+  const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  // FETCH LOCATIONS HANDLER
+  const fetchLocations = useCallback(async (q) => {
+    // IF NO QUERY
+    if (!q) {
+      setSuggestions([]);
+      return;
+    }
+    // MAKING REQUEST
+    try {
+      // SETTING URL FOR SEARCH
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      // SETTING URL SEARCH PARAMS
+      url.search = new URLSearchParams({
+        q,
+        format: "json",
+        addressdetails: "0",
+        limit: "5",
+      }).toString();
+      // AWAITING RESPONSE
+      const response = await fetch(url.toString(), {
+        headers: {
+          "User-Agent": "Instagram Clone - (iahmedabbas7@gmail.com)",
+        },
+      });
+      // CONVERTING DATA TO JSON
+      const data = await response.json();
+      // SETTING SUGGESTIONS LIST
+      setSuggestions(data);
+    } catch (error) {
+      console.error("Failed to Load Location Suggestions!", error);
+    }
+  }, []);
+  // DEBOUNCING THE FETCH LOCATION HANDLER REQUEST
+  useEffect(() => {
+    const handler = setTimeout(() => fetchLocations(query), 300);
+    return () => clearTimeout(handler);
+  }, [query, fetchLocations]);
   // FILE CHANGE HANDLER
   const changeFileHandler = async (e) => {
     // SELECTING FILE
@@ -44,6 +84,7 @@ const CreatePost = ({ open, setOpen }) => {
     const formData = new FormData();
     // APPENDING DATA TO FORM DATA OBJECT
     if (caption.trim()) formData.append("caption", caption);
+    if (location) formData.append("location", location);
     if (file) formData.append("file", file);
     // LOADING STATE
     setLoading(true);
@@ -64,6 +105,7 @@ const CreatePost = ({ open, setOpen }) => {
         setFile("");
         setImagePreview("");
         setCaption("");
+        setLocation("");
         // CLOSING THE POST DIALOG
         setOpen(false);
       }
@@ -86,6 +128,7 @@ const CreatePost = ({ open, setOpen }) => {
           setFile("");
           setImagePreview("");
           setCaption("");
+          setLocation("");
         }}
       >
         {/* DIALOG CONTENT MAIN WRAPPER */}
@@ -167,6 +210,66 @@ const CreatePost = ({ open, setOpen }) => {
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Write the post caption..."
                 />
+              </div>
+            )}
+            {/* POST LOCATION */}
+            {!location && imagePreview && file && (
+              <div className="w-full px-4 pb-4">
+                <input
+                  type="text"
+                  name="location"
+                  id="location"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setLocation("");
+                  }}
+                  className="w-full p-2 rounded-md border-2 border-gray-200 outline-none focus:outline none text-gray-500"
+                  placeholder="Add Location..."
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                {/* LOCATION SUGGESTION LIST */}
+                {suggestions.length > 0 && (
+                  <ul className="bg-white border-2 border-gray-200 w-full mt-1 max-h-50 overflow-y-auto rounded-md">
+                    {suggestions.map((item, i) => (
+                      <li
+                        key={i}
+                        onClick={() => {
+                          setLocation(item.name);
+                          setQuery("");
+                          setSuggestions([]);
+                        }}
+                        className="p-2 hover:bg-gray-100 cursor-pointer text-gray-500 text-sm font-semibold flex flex-col gap-1"
+                      >
+                        <span>{item.name}</span>
+                        <span className="text-xs text-gray-400">
+                          {item.display_name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* LOCATION TAG */}
+            {location && (
+              <div className="w-full flex items-center px-4 pb-4 relative">
+                <div className="w-full rounded-md p-2 bg-gray-100 cursor-pointer hover:bg-gray-100 flex items-center gap-1 text-sm">
+                  <MapPin className="text-sky-500" />
+                  <span className="text-gray-500 font-semibold">
+                    {location}
+                  </span>
+                </div>
+                <span
+                  title="Remove"
+                  onClick={() => {
+                    setLocation("");
+                  }}
+                  className="rounded-full absolute right-6 bg-gray-200 text-sky-400 cursor-pointer p-1 hover:bg-gray-100"
+                >
+                  <X size={15} />
+                </span>
               </div>
             )}
             {/* POST BUTTON */}
