@@ -1,11 +1,12 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
-import { useState } from "react";
 import Messages from "./Messages";
 import ChatsList from "./ChatsList";
 import { Button } from "../ui/button";
 import axiosClient from "@/utils/axiosClient";
+import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
+import { useCallback, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
@@ -15,9 +16,11 @@ import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import {
   ArrowLeftIcon,
   Edit,
+  Loader2,
   Maximize,
   MessageCircleMore,
   Search,
+  SearchX,
   X,
 } from "lucide-react";
 
@@ -28,6 +31,16 @@ const ChatBubble = () => {
   const navigate = useNavigate();
   // LOCATION
   const { pathname } = useLocation();
+  // USING USE SEARCH USERS HOOK
+  const {
+    query,
+    loading,
+    hasMore,
+    setQuery,
+    loadMore,
+    hasFetched,
+    users: searchResults,
+  } = useSearchUsers("");
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
   const { allConversations } = useConversations();
   // MESSAGE TEXT STATE
@@ -78,6 +91,22 @@ const ChatBubble = () => {
       toast.error(error?.response?.data?.message || "Failed to Send Message");
     }
   };
+  // SETTING UP OBSERVER REF FOR INFINITE SCROLL ON SEARCH RESULTS
+  const searchObserverRef = useRef();
+  // SETTING LAST REF FOR THE LAST ITEM OF EACH SEARCH RESULTS FETCH
+  const lastSearchRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (searchObserverRef.current) searchObserverRef.current.disconnect();
+      searchObserverRef.current = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && hasMore) {
+          loadMore();
+        }
+      });
+      if (node) searchObserverRef.current.observe(node);
+    },
+    [loading, hasMore, loadMore]
+  );
   return (
     <>
       {/* CHAT BUBBLE */}
@@ -86,7 +115,7 @@ const ChatBubble = () => {
           onClick={() => setShowMessages(true)}
           className={`${
             isChatPage ? "hidden" : "fixed"
-          } bottom-9 right-9 bg-white hover:bg-gray-100 shadow-[0_4px_15px_rgba(0,0,0,0.4)] px-5 py-3 cursor-pointer rounded-full min-w-[250px] z-[999999999]`}
+          } bottom-9 right-9 bg-white hover:bg-gray-100 shadow-[0_4px_15px_rgba(0,0,0,0.4)] px-5 py-3 cursor-pointer rounded-full min-w-[250px] z-[25]`}
         >
           {/* CHAT BUBBLE CONTENT WRAPPER */}
           <div className="w-f-full flex items-center justify-between">
@@ -102,7 +131,7 @@ const ChatBubble = () => {
         <div
           className={`${
             isChatPage ? "hidden" : "fixed"
-          } right-7 bottom-7 w-[350px] h-[85vh] bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] rounded-lg z-[9999999999] flex flex-col items-start justify-start`}
+          } right-7 bottom-7 w-[350px] h-[85vh] bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] rounded-lg z-[25] flex flex-col items-start justify-start`}
         >
           {/* MESSAGES PANEL STATE */}
           {panelState === "MESSAGES" && (
@@ -190,80 +219,163 @@ const ChatBubble = () => {
                   <div className="w-full border-b-2 border-gray-200 relative flex items-center px-3 py-1.5">
                     <input
                       type="text"
+                      value={query}
+                      name="searchQuery"
+                      id="searchQuery"
+                      onChange={(e) => setQuery(e.target.value)}
                       className="w-full border-none outline-none focus:outline-none text-gray-500 placeholder:text-gray-500 pl-8 pr-3 text-sm placeholder:text-sm"
                       placeholder="Search..."
+                      spellCheck="false"
+                      autoComplete="off"
                     />
                     <span className="absolute left-3 font-semibold">To:</span>
                   </div>
-                  {/* ACCOUNTS LIST */}
-                  <div className="flex-1 overflow-y-auto flex flex-col items-start justify-start w-full">
-                    {/* HEADING */}
-                    {filteredSuggestedUsers.length > 0 && (
-                      <>
-                        <h4 className="px-3 py-1.5 text-sm font-semibold">
-                          Suggested
-                        </h4>
-                      </>
-                    )}
-                    {/* SUGGESTIONS LIST */}
-                    {filteredSuggestedUsers.map((u) => {
-                      // AVATAR FALLBACK MANAGEMENT
-                      const fullNameInitials = u?.fullName
-                        ? getFullNameInitials(u?.fullName)
-                        : "";
-                      return (
-                        <>
-                          {/* AVATAR & USERNAME */}
-                          <div
-                            key={u}
-                            className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
-                            onClick={() => {
-                              setPanelState("CHAT");
-                              dispatch(setChatUser(u));
-                            }}
-                          >
-                            {/* AVATAR */}
-                            <Avatar
-                              className={`w-12 h-12 cursor-pointer ${
-                                u?.profilePhoto === ""
-                                  ? "bg-gray-300"
-                                  : "bg-none"
-                              } `}
-                            >
-                              <AvatarImage
-                                src={u?.profilePhoto}
-                                alt={u?.fullName}
-                                className="w-12 h-12"
-                              />
-                              <AvatarFallback>
-                                {fullNameInitials}
-                              </AvatarFallback>
-                            </Avatar>
-                            {/* USERNAME */}
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-[0.975rem]">
-                                {u?.username}
-                              </span>
-                              <span className="text-gray-500 text-sm">
-                                {u?.fullName}
-                              </span>
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })}
-                    {/* IF NO SUGGESTIONS */}
-                    {filteredSuggestedUsers.length === 0 && (
-                      <div className="w-full flex-1 flex flex-col items-center justify-center gap-2">
-                        <div>
-                          <Search size={50} className="text-sky-400" />
+                  {/* SEARCH RESULTS LIST */}
+                  {query && (
+                    <>
+                      {/* SEARCH RESULTS LOADING */}
+                      {loading && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Loader2
+                            size={30}
+                            className="animate-spin text-gray-500"
+                          />
                         </div>
-                        <span className="text-sm text-gray-500 text-center">
-                          Search & find people to <br /> start a chat with them.
-                        </span>
+                      )}
+                      {/* SEARCH RESULTS DISPLAY */}
+                      <div className="flex-1 overflow-y-auto flex flex-col items-start justify-start w-full">
+                        {searchResults.map((u, idx) => {
+                          // SETTING REF ON LAST SEARCH ELEMENT
+                          const isLast = idx === searchResults.length - 1;
+                          // AVATAR FALLBACK MANAGEMENT
+                          const fullNameInitials = u?.fullName
+                            ? getFullNameInitials(u?.fullName)
+                            : "";
+                          return (
+                            <>
+                              {/* AVATAR & USERNAME */}
+                              <div
+                                key={u._id}
+                                ref={isLast ? lastSearchRef : undefined}
+                                className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
+                              >
+                                {/* AVATAR */}
+                                <Avatar
+                                  className={`w-11 h-11 cursor-pointer ${
+                                    u?.profilePhoto === ""
+                                      ? "bg-gray-300"
+                                      : "bg-none"
+                                  } `}
+                                >
+                                  <AvatarImage
+                                    src={u?.profilePhoto}
+                                    alt={u?.fullName}
+                                    className="w-11 h-11"
+                                  />
+                                  <AvatarFallback>
+                                    {fullNameInitials}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {/* USERNAME */}
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-[1rem]">
+                                    {u?.username}
+                                  </span>
+                                  <span className="text-gray-500 text-sm">
+                                    {u.fullName}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
+                      {/* IF NO SEARCH RESULTS */}
+                      {hasFetched && !loading && searchResults.length === 0 && (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                          <SearchX size={50} className="text-sky-400" />
+                          <span className="text-sm text-gray-500">
+                            No search results for{" "}
+                            <span className="font-semibold">
+                              &quot;{query}&quot;
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {/* SUGGESTED ACCOUNTS LIST */}
+                  {!query && (
+                    <div className="flex-1 overflow-y-auto flex flex-col items-start justify-start w-full">
+                      {/* HEADING */}
+                      {filteredSuggestedUsers.length > 0 && (
+                        <>
+                          <h4 className="px-3 py-1.5 text-sm font-semibold">
+                            Suggested
+                          </h4>
+                        </>
+                      )}
+                      {/* SUGGESTIONS LIST */}
+                      {filteredSuggestedUsers.map((u) => {
+                        // AVATAR FALLBACK MANAGEMENT
+                        const fullNameInitials = u?.fullName
+                          ? getFullNameInitials(u?.fullName)
+                          : "";
+                        return (
+                          <>
+                            {/* AVATAR & USERNAME */}
+                            <div
+                              key={u}
+                              className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
+                              onClick={() => {
+                                setPanelState("CHAT");
+                                dispatch(setChatUser(u));
+                              }}
+                            >
+                              {/* AVATAR */}
+                              <Avatar
+                                className={`w-12 h-12 cursor-pointer ${
+                                  u?.profilePhoto === ""
+                                    ? "bg-gray-300"
+                                    : "bg-none"
+                                } `}
+                              >
+                                <AvatarImage
+                                  src={u?.profilePhoto}
+                                  alt={u?.fullName}
+                                  className="w-12 h-12"
+                                />
+                                <AvatarFallback>
+                                  {fullNameInitials}
+                                </AvatarFallback>
+                              </Avatar>
+                              {/* USERNAME */}
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-[0.975rem]">
+                                  {u?.username}
+                                </span>
+                                <span className="text-gray-500 text-sm">
+                                  {u?.fullName}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })}
+                      {/* IF NO SUGGESTIONS */}
+                      {filteredSuggestedUsers.length === 0 && (
+                        <div className="w-full flex-1 flex flex-col items-center justify-center gap-2">
+                          <div>
+                            <Search size={50} className="text-sky-400" />
+                          </div>
+                          <span className="text-sm text-gray-500 text-center">
+                            Search & find people to <br /> start a chat with
+                            them.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {/* FOOTER */}
                 <div className="w-full px-5 py-3.5 border-t-2 border-gray-200">
