@@ -102,6 +102,8 @@ const SocketListener = () => {
     });
     // LISTENING FOR NEW CHAT MESSAGE SOCKET EVENT
     socketRef.current.on("newMessage", (populatedMessage) => {
+      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
+      queryClient.invalidateQueries(["conversations"]);
       // MESSAGE SENDER
       const messageSender = populatedMessage?.senderId?._id;
       // DISPATCHING THE NEW MESSAGE IN THE MESSAGES ONLY WHEN THE USER IS CURRENTLY IN CHAT
@@ -322,6 +324,11 @@ const SocketListener = () => {
         // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
         dispatch(setFollowNotifications(notification));
       }
+    });
+    // LISTENING FOR NEW CONVERSATION SOCKET EVENT
+    socketRef.current.on("newConversation", () => {
+      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
+      queryClient.invalidateQueries(["conversations"]);
     });
     // CLEANUP FUNCTION
     return () => {

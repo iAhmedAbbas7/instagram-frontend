@@ -9,6 +9,7 @@ import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { useCallback, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -48,6 +49,10 @@ const ChatBubble = () => {
     hasFetched,
     users: searchResults,
   } = useSearchUsers("");
+  // USING QUERY CLIENT
+  const queryClient = useQueryClient();
+  // SCROLL CONTAINER REF
+  const scrollContainerRef = useRef();
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
   const { allConversations } = useConversations();
   // MESSAGE TEXT STATE
@@ -63,7 +68,9 @@ const ChatBubble = () => {
   // CURRENT USER CREDENTIALS
   const { suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
-  const { chatUser, messages } = useSelector((store) => store.chat);
+  const { chatUser, messages, currentConversation } = useSelector(
+    (store) => store.chat
+  );
   // COMPUTING FILTERED SUGGESTED USERS LIST
   const filteredSuggestedUsers = suggestedUsers.filter(
     (u) =>
@@ -90,8 +97,14 @@ const ChatBubble = () => {
       if (response.data.success) {
         // SETTING MESSAGE IN THE CHAT MESSAGES STATE
         dispatch(setMessages([...messages, response.data.populatedMessage]));
+        // DISPATCHING THE CONVERSATION IN THE CURRENT CONVERSATION IF NOT SET ALREADY
+        if (currentConversation === null) {
+          dispatch(setCurrentConversation(response.data.conversation));
+        }
         // CLEARING MESSAGE FIELD
         setMessageText("");
+        // INVALIDATING CONVERSATION LIST
+        queryClient.invalidateQueries(["conversations"]);
       }
     } catch (error) {
       // LOGGING ERROR MESSAGE
@@ -163,9 +176,11 @@ const ChatBubble = () => {
                 className="rounded-full p-3 flex items-center justify-center bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] absolute bottom-3 right-3 z-[100] cursor-pointer hover:bg-gray-100"
                 title="New Message"
                 onClick={() => {
+                  setQuery("");
                   setPanelState("NEW-MESSAGE");
                   setSelectedUsers([]);
                   dispatch(setChatUser(null));
+                  dispatch(setMessages([]));
                   dispatch(setCurrentConversation(null));
                 }}
               >
@@ -188,10 +203,12 @@ const ChatBubble = () => {
                   <div
                     title="Close"
                     onClick={() => {
+                      setQuery("");
                       setSelectedUsers([]);
                       setShowMessages(false);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
+                      dispatch(setMessages([]));
                       dispatch(setCurrentConversation(null));
                     }}
                   >
@@ -218,9 +235,11 @@ const ChatBubble = () => {
                     <div
                       title="Go Back"
                       onClick={() => {
+                        setQuery("");
                         setPanelState("MESSAGES");
                         setSelectedUsers([]);
                         dispatch(setChatUser(null));
+                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -236,10 +255,12 @@ const ChatBubble = () => {
                   <div
                     title="Close"
                     onClick={() => {
+                      setQuery("");
                       setShowMessages(false);
                       setSelectedUsers([]);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
+                      dispatch(setMessages([]));
                       dispatch(setCurrentConversation(null));
                     }}
                   >
@@ -464,9 +485,11 @@ const ChatBubble = () => {
                     <div
                       title="Go Back"
                       onClick={() => {
+                        setQuery("");
                         setSelectedUsers([]);
                         setPanelState("NEW-MESSAGE");
                         dispatch(setChatUser(null));
+                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -533,10 +556,12 @@ const ChatBubble = () => {
                     <div
                       title="Close"
                       onClick={() => {
+                        setQuery("");
                         setShowMessages(false);
                         setPanelState("MESSAGES");
                         setSelectedUsers([]);
                         dispatch(setChatUser(null));
+                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -548,7 +573,10 @@ const ChatBubble = () => {
                   </div>
                 </div>
                 {/* MESSAGES SECTION */}
-                <div className="w-full flex-1 flex flex-col items-start justify-start overflow-y-auto px-3 py-4">
+                <div
+                  className="w-full flex-1 flex flex-col items-start justify-start overflow-y-auto px-3 py-4"
+                  ref={scrollContainerRef}
+                >
                   {/* CHAT USER INFO SECTION */}
                   <div className="w-full py-4 flex flex-col items-center justify-center">
                     {/* AVATAR */}
@@ -586,7 +614,7 @@ const ChatBubble = () => {
                     </Button>
                   </div>
                   {/* MESSAGES */}
-                  <Messages chatUser={chatUser} />
+                  <Messages scrollContainerRef={scrollContainerRef} />
                 </div>
                 {/* MESSAGE INPUT */}
                 <div className="w-full p-3 bg-white relative flex items-center justify-center rounded-b-lg">

@@ -8,7 +8,6 @@ const chatSlice = createSlice({
     currentConversation: null,
     chatUser: null,
     onlineUsers: [],
-    messages: [],
   },
   reducers: {
     setCurrentConversation: (state, action) => {
@@ -20,19 +19,12 @@ const chatSlice = createSlice({
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
     },
-    setMessages: (state, action) => {
-      state.messages = action.payload;
-    },
   },
 });
 
 // <= EXPORTING SLICE ACTIONS =>
-export const {
-  setCurrentConversation,
-  setChatUser,
-  setOnlineUsers,
-  setMessages,
-} = chatSlice.actions;
+export const { setCurrentConversation, setChatUser, setOnlineUsers } =
+  chatSlice.actions;
 
 // <= EXPORTING CHAT SLICE =>
 export default chatSlice.reducer;
