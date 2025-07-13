@@ -2,11 +2,11 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { setChatUser } from "@/redux/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { setChatUser, setCurrentConversation } from "@/redux/chatSlice";
 
 const ChatsList = ({ setPanelState }) => {
   // DISPATCH
@@ -72,6 +72,7 @@ const ChatsList = ({ setPanelState }) => {
                 <div
                   key={chat._id}
                   onClick={() => {
+                    dispatch(setCurrentConversation(chat));
                     dispatch(setChatUser(other));
                     setPanelState("CHAT");
                   }}

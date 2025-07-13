@@ -5,11 +5,15 @@ import { createSlice } from "@reduxjs/toolkit";
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
+    currentConversation: null,
     chatUser: null,
     onlineUsers: [],
     messages: [],
   },
   reducers: {
+    setCurrentConversation: (state, action) => {
+      state.currentConversation = action.payload;
+    },
     setChatUser: (state, action) => {
       state.chatUser = action.payload;
     },
@@ -23,7 +27,12 @@ const chatSlice = createSlice({
 });
 
 // <= EXPORTING SLICE ACTIONS =>
-export const { setChatUser, setOnlineUsers, setMessages } = chatSlice.actions;
+export const {
+  setCurrentConversation,
+  setChatUser,
+  setOnlineUsers,
+  setMessages,
+} = chatSlice.actions;
 
 // <= EXPORTING CHAT SLICE =>
 export default chatSlice.reducer;

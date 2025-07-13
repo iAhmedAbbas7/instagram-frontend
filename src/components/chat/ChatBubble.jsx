@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import Messages from "./Messages";
 import ChatsList from "./ChatsList";
 import { Button } from "../ui/button";
+import ChatButton from "./ChatButton";
 import axiosClient from "@/utils/axiosClient";
 import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
@@ -11,10 +12,11 @@ import { Avatar, AvatarFallback } from "../ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
 import { useLocation, useNavigate } from "react-router-dom";
-import { setChatUser, setMessages } from "@/redux/chatSlice";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import {
   ArrowLeftIcon,
+  CheckCircle2,
+  Circle,
   Edit,
   Loader2,
   Maximize,
@@ -23,6 +25,11 @@ import {
   SearchX,
   X,
 } from "lucide-react";
+import {
+  setChatUser,
+  setCurrentConversation,
+  setMessages,
+} from "@/redux/chatSlice";
 
 const ChatBubble = () => {
   // DISPATCH
@@ -51,6 +58,8 @@ const ChatBubble = () => {
   const [showMessages, setShowMessages] = useState(false);
   // MESSAGES TRAY CONTENT STATE
   const [panelState, setPanelState] = useState("MESSAGES");
+  // SELECTED USERS STATE MANAGEMENT
+  const [selectedUsers, setSelectedUsers] = useState([]);
   // CURRENT USER CREDENTIALS
   const { suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
@@ -107,12 +116,25 @@ const ChatBubble = () => {
     },
     [loading, hasMore, loadMore]
   );
+  // TOGGLE SELECTED USERS HANDLER
+  const toggleSelected = (user) => {
+    setSelectedUsers((prev) =>
+      prev.find((x) => x._id === user._id)
+        ? prev.filter((x) => x._id !== user._id)
+        : [...prev, user]
+    );
+  };
   return (
     <>
       {/* CHAT BUBBLE */}
       {!showMessages && (
         <div
-          onClick={() => setShowMessages(true)}
+          onClick={() => {
+            setShowMessages(true);
+            setSelectedUsers([]);
+            dispatch(setChatUser(null));
+            dispatch(setCurrentConversation(null));
+          }}
           className={`${
             isChatPage ? "hidden" : "fixed"
           } bottom-9 right-9 bg-white hover:bg-gray-100 shadow-[0_4px_15px_rgba(0,0,0,0.4)] px-5 py-3 cursor-pointer rounded-full min-w-[250px] z-[25]`}
@@ -140,7 +162,12 @@ const ChatBubble = () => {
               <div
                 className="rounded-full p-3 flex items-center justify-center bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] absolute bottom-3 right-3 z-[100] cursor-pointer hover:bg-gray-100"
                 title="New Message"
-                onClick={() => setPanelState("NEW-MESSAGE")}
+                onClick={() => {
+                  setPanelState("NEW-MESSAGE");
+                  setSelectedUsers([]);
+                  dispatch(setChatUser(null));
+                  dispatch(setCurrentConversation(null));
+                }}
               >
                 <Edit size={30} />
               </div>
@@ -161,9 +188,11 @@ const ChatBubble = () => {
                   <div
                     title="Close"
                     onClick={() => {
+                      setSelectedUsers([]);
                       setShowMessages(false);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
+                      dispatch(setCurrentConversation(null));
                     }}
                   >
                     <X
@@ -188,7 +217,12 @@ const ChatBubble = () => {
                     {/* BACK BUTTON */}
                     <div
                       title="Go Back"
-                      onClick={() => setPanelState("MESSAGES")}
+                      onClick={() => {
+                        setPanelState("MESSAGES");
+                        setSelectedUsers([]);
+                        dispatch(setChatUser(null));
+                        dispatch(setCurrentConversation(null));
+                      }}
                     >
                       <ArrowLeftIcon
                         size={25}
@@ -203,8 +237,10 @@ const ChatBubble = () => {
                     title="Close"
                     onClick={() => {
                       setShowMessages(false);
+                      setSelectedUsers([]);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
+                      dispatch(setCurrentConversation(null));
                     }}
                   >
                     <X
@@ -251,39 +287,55 @@ const ChatBubble = () => {
                           const fullNameInitials = u?.fullName
                             ? getFullNameInitials(u?.fullName)
                             : "";
+                          // SELECTED FLAG
+                          const isSelected = selectedUsers.some(
+                            (x) => x._id === u._id
+                          );
                           return (
                             <>
-                              {/* AVATAR & USERNAME */}
+                              {/* MAIN CONTAINER */}
                               <div
                                 key={u._id}
                                 ref={isLast ? lastSearchRef : undefined}
-                                className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
+                                onClick={() => toggleSelected(u)}
+                                className="w-full p-3 cursor-pointer flex items-center justify-between hover:bg-gray-100"
                               >
-                                {/* AVATAR */}
-                                <Avatar
-                                  className={`w-11 h-11 cursor-pointer ${
-                                    u?.profilePhoto === ""
-                                      ? "bg-gray-300"
-                                      : "bg-none"
-                                  } `}
-                                >
-                                  <AvatarImage
-                                    src={u?.profilePhoto}
-                                    alt={u?.fullName}
-                                    className="w-11 h-11"
-                                  />
-                                  <AvatarFallback>
-                                    {fullNameInitials}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {/* USERNAME */}
-                                <div className="flex flex-col">
-                                  <span className="font-semibold text-[1rem]">
-                                    {u?.username}
-                                  </span>
-                                  <span className="text-gray-500 text-sm">
-                                    {u.fullName}
-                                  </span>
+                                {/* AVATAR & USERNAME */}
+                                <div className="w-full flex items-center gap-3 ">
+                                  {/* AVATAR */}
+                                  <Avatar
+                                    className={`w-11 h-11 cursor-pointer ${
+                                      u?.profilePhoto === ""
+                                        ? "bg-gray-300"
+                                        : "bg-none"
+                                    } `}
+                                  >
+                                    <AvatarImage
+                                      src={u?.profilePhoto}
+                                      alt={u?.fullName}
+                                      className="w-11 h-11"
+                                    />
+                                    <AvatarFallback>
+                                      {fullNameInitials}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {/* USERNAME */}
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-[1rem]">
+                                      {u?.username}
+                                    </span>
+                                    <span className="text-gray-500 text-sm">
+                                      {u.fullName}
+                                    </span>
+                                  </div>
+                                </div>
+                                {/* SELECT ICON */}
+                                <div>
+                                  {isSelected ? (
+                                    <CheckCircle2 className="text-sky-400" />
+                                  ) : (
+                                    <Circle className="text-sky-400" />
+                                  )}
                                 </div>
                               </div>
                             </>
@@ -321,42 +373,54 @@ const ChatBubble = () => {
                         const fullNameInitials = u?.fullName
                           ? getFullNameInitials(u?.fullName)
                           : "";
+                        // SELECTED FLAG
+                        const isSelected = selectedUsers.some(
+                          (x) => x._id === u._id
+                        );
                         return (
                           <>
-                            {/* AVATAR & USERNAME */}
+                            {/* MAIN CONTAINER */}
                             <div
                               key={u}
-                              className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
-                              onClick={() => {
-                                setPanelState("CHAT");
-                                dispatch(setChatUser(u));
-                              }}
+                              className="w-full flex items-center justify-between hover:bg-gray-100 p-3 cursor-pointer"
+                              onClick={() => toggleSelected(u)}
                             >
-                              {/* AVATAR */}
-                              <Avatar
-                                className={`w-12 h-12 cursor-pointer ${
-                                  u?.profilePhoto === ""
-                                    ? "bg-gray-300"
-                                    : "bg-none"
-                                } `}
-                              >
-                                <AvatarImage
-                                  src={u?.profilePhoto}
-                                  alt={u?.fullName}
-                                  className="w-12 h-12"
-                                />
-                                <AvatarFallback>
-                                  {fullNameInitials}
-                                </AvatarFallback>
-                              </Avatar>
-                              {/* USERNAME */}
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-[0.975rem]">
-                                  {u?.username}
-                                </span>
-                                <span className="text-gray-500 text-sm">
-                                  {u?.fullName}
-                                </span>
+                              {/* AVATAR & USERNAME */}
+                              <div className="w-full flex items-center gap-3">
+                                {/* AVATAR */}
+                                <Avatar
+                                  className={`w-12 h-12 cursor-pointer ${
+                                    u?.profilePhoto === ""
+                                      ? "bg-gray-300"
+                                      : "bg-none"
+                                  } `}
+                                >
+                                  <AvatarImage
+                                    src={u?.profilePhoto}
+                                    alt={u?.fullName}
+                                    className="w-12 h-12"
+                                  />
+                                  <AvatarFallback>
+                                    {fullNameInitials}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {/* USERNAME */}
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-[0.975rem]">
+                                    {u?.username}
+                                  </span>
+                                  <span className="text-gray-500 text-sm">
+                                    {u?.fullName}
+                                  </span>
+                                </div>
+                              </div>
+                              {/* SELECT ICON */}
+                              <div>
+                                {isSelected ? (
+                                  <CheckCircle2 className="text-sky-400" />
+                                ) : (
+                                  <Circle className="text-sky-400" />
+                                )}
                               </div>
                             </div>
                           </>
@@ -379,12 +443,10 @@ const ChatBubble = () => {
                 </div>
                 {/* FOOTER */}
                 <div className="w-full px-5 py-3.5 border-t-2 border-gray-200">
-                  <span className="w-full bg-sky-400 hover:bg-sky-500 text-white flex cursor-pointer items-center justify-center gap-2 p-2 rounded-md font-semibold text-[1rem] ">
-                    <div>
-                      <MessageCircleMore size={20} />
-                    </div>
-                    <h5>Chat</h5>
-                  </span>
+                  <ChatButton
+                    selectedUsers={selectedUsers}
+                    setPanelState={setPanelState}
+                  />
                 </div>
               </div>
             </>
@@ -401,7 +463,12 @@ const ChatBubble = () => {
                     {/* BACK BUTTON */}
                     <div
                       title="Go Back"
-                      onClick={() => setPanelState("NEW-MESSAGE")}
+                      onClick={() => {
+                        setSelectedUsers([]);
+                        setPanelState("NEW-MESSAGE");
+                        dispatch(setChatUser(null));
+                        dispatch(setCurrentConversation(null));
+                      }}
                     >
                       <ArrowLeftIcon
                         size={25}
@@ -468,7 +535,9 @@ const ChatBubble = () => {
                       onClick={() => {
                         setShowMessages(false);
                         setPanelState("MESSAGES");
+                        setSelectedUsers([]);
                         dispatch(setChatUser(null));
+                        dispatch(setCurrentConversation(null));
                       }}
                     >
                       <X

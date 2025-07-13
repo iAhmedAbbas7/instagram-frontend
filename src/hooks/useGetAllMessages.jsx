@@ -10,16 +10,26 @@ const useGetAllMessages = () => {
   // LOADING STATE
   const [loading, setLoading] = useState(true);
   // GETTING CHAT USER FROM CHAT SLICE
-  const { chatUser } = useSelector((store) => store.chat);
+  const { chatUser, currentConversation } = useSelector((store) => store.chat);
   // EFFECT TO FETCH SUGGESTED USERS
   useEffect(() => {
+    // GETTING CONVERSATION ID FROM CURRENT CONVERSATION
+    const conversationId = currentConversation?._id;
+    // GETTING CHAT USER ID IF CONVERSATION ID IS NOT AVAILABLE
+    const chatUserId = !currentConversation && chatUser ? chatUser._id : null;
+    // IF SOMEHOW BOTH ARE NOT AVAILABLE, THEN RETURNING
+    if (!conversationId && chatUserId) return;
     // FETCHING SUGGESTED USERS
     const fetchAllMessages = async () => {
       // LOADING STATE
       setLoading(true);
       // MAKING REQUEST
       try {
-        const response = await axiosClient.get(`/message/all/${chatUser?._id}`);
+        // SETTING URL BASED ON WHICH ID IS PRESENT
+        const URL = conversationId
+          ? `/message/conversation/${conversationId}/messages`
+          : `/message/all/${chatUserId}`;
+        const response = await axiosClient.get(URL);
         // IF RESPONSE SUCCESS
         if (response.data.success) {
           //SETTING SUGGESTED USERS IN THE AUTH SLICE
@@ -34,7 +44,7 @@ const useGetAllMessages = () => {
       }
     };
     fetchAllMessages();
-  }, [dispatch, chatUser]);
+  }, [dispatch, chatUser, currentConversation]);
   return { loading };
 };
 
