@@ -2,7 +2,6 @@
 import { toast } from "sonner";
 import Messages from "./Messages";
 import ChatsList from "./ChatsList";
-import { Button } from "../ui/button";
 import ChatButton from "./ChatButton";
 import axiosClient from "@/utils/axiosClient";
 import useSearchUsers from "@/hooks/useSearchUsers";
@@ -14,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
+import { setChatUser, setCurrentConversation } from "@/redux/chatSlice";
 import {
   ArrowLeftIcon,
   CheckCircle2,
@@ -26,11 +26,7 @@ import {
   SearchX,
   X,
 } from "lucide-react";
-import {
-  setChatUser,
-  setCurrentConversation,
-  setMessages,
-} from "@/redux/chatSlice";
+import store from "@/redux/store";
 
 const ChatBubble = () => {
   // DISPATCH
@@ -68,9 +64,7 @@ const ChatBubble = () => {
   // CURRENT USER CREDENTIALS
   const { suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
-  const { chatUser, messages, currentConversation } = useSelector(
-    (store) => store.chat
-  );
+  const { chatUser } = useSelector((store) => store.chat);
   // COMPUTING FILTERED SUGGESTED USERS LIST
   const filteredSuggestedUsers = suggestedUsers.filter(
     (u) =>
@@ -95,16 +89,35 @@ const ChatBubble = () => {
       );
       // IF RESPONSE SUCCESS
       if (response.data.success) {
-        // SETTING MESSAGE IN THE CHAT MESSAGES STATE
-        dispatch(setMessages([...messages, response.data.populatedMessage]));
-        // DISPATCHING THE CONVERSATION IN THE CURRENT CONVERSATION IF NOT SET ALREADY
-        if (currentConversation === null) {
-          dispatch(setCurrentConversation(response.data.conversation));
-        }
         // CLEARING MESSAGE FIELD
         setMessageText("");
-        // INVALIDATING CONVERSATION LIST
-        queryClient.invalidateQueries(["conversations"]);
+        // GETTING CHAT USER & CURRENT CONVERSATION FROM GLOBAL REDUX STORE
+        const { chatUser, currentConversation } = store.getState().chat;
+        // SETTING CHAT USER ID FROM CHAT USER
+        const chatUserID = chatUser?._id;
+        // SETTING CURRENT CONVERSATION ID FROM CURRENT CONVERSATION
+        const conversationID = currentConversation?._id;
+        // SETTING QUERY KEY FOR SETTING QUERY DATA
+        const queryKey = conversationID || chatUserID;
+        // IF QUERY KEY EXISTS
+        if (queryKey) {
+          // GETTING NEWLY CREATED MESSAGE FROM RESPONSE
+          const newMessage = response.data.populatedMessage;
+          // OPTIMISTICALLY APPENDING THE NEW MESSAGE TO THE CHAT MESSAGES
+          queryClient.setQueryData(["messages", queryKey], (oldData) => {
+            // IF NO PREVIOUS DATA RETURNING CURRENT DATA
+            if (!oldData) return oldData;
+            // SETTING NEW PAGES FOR MESSAGES
+            const newPages = [...oldData.pages];
+            // APPENDING NEW MESSAGE TO THE FIRST PAGE OF PAGES
+            newPages[0] = {
+              ...newPages[0],
+              // APPENDING NEW MESSAGE AT THE TOP OF FIRST PAGE
+              messages: [newMessage, ...newPages[0].messages],
+            };
+            return { ...oldData, pages: newPages };
+          });
+        }
       }
     } catch (error) {
       // LOGGING ERROR MESSAGE
@@ -180,7 +193,6 @@ const ChatBubble = () => {
                   setPanelState("NEW-MESSAGE");
                   setSelectedUsers([]);
                   dispatch(setChatUser(null));
-                  dispatch(setMessages([]));
                   dispatch(setCurrentConversation(null));
                 }}
               >
@@ -208,7 +220,6 @@ const ChatBubble = () => {
                       setShowMessages(false);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
-                      dispatch(setMessages([]));
                       dispatch(setCurrentConversation(null));
                     }}
                   >
@@ -239,7 +250,6 @@ const ChatBubble = () => {
                         setPanelState("MESSAGES");
                         setSelectedUsers([]);
                         dispatch(setChatUser(null));
-                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -260,7 +270,6 @@ const ChatBubble = () => {
                       setSelectedUsers([]);
                       setPanelState("MESSAGES");
                       dispatch(setChatUser(null));
-                      dispatch(setMessages([]));
                       dispatch(setCurrentConversation(null));
                     }}
                   >
@@ -489,7 +498,6 @@ const ChatBubble = () => {
                         setSelectedUsers([]);
                         setPanelState("NEW-MESSAGE");
                         dispatch(setChatUser(null));
-                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -561,7 +569,6 @@ const ChatBubble = () => {
                         setPanelState("MESSAGES");
                         setSelectedUsers([]);
                         dispatch(setChatUser(null));
-                        dispatch(setMessages([]));
                         dispatch(setCurrentConversation(null));
                       }}
                     >
@@ -574,45 +581,9 @@ const ChatBubble = () => {
                 </div>
                 {/* MESSAGES SECTION */}
                 <div
-                  className="w-full flex-1 flex flex-col items-start justify-start overflow-y-auto px-3 py-4"
+                  className="w-full flex-1 flex flex-col items-start justify-start overflow-y-auto py-4"
                   ref={scrollContainerRef}
                 >
-                  {/* CHAT USER INFO SECTION */}
-                  <div className="w-full py-4 flex flex-col items-center justify-center">
-                    {/* AVATAR */}
-                    <Avatar
-                      className={`w-20 h-20 cursor-pointer ${
-                        chatUser?.profilePhoto === ""
-                          ? "bg-gray-300"
-                          : "bg-none"
-                      } `}
-                    >
-                      <AvatarImage
-                        src={chatUser?.profilePhoto}
-                        alt={chatUser?.fullName}
-                        className="w-20 h-20"
-                      />
-                      <AvatarFallback>
-                        {fullNameInitialsChatUser}
-                      </AvatarFallback>
-                    </Avatar>
-                    {/* FULLNAME */}
-                    <h1 className="font-semibold text-[1.3rem] mt-1">
-                      {chatUser?.fullName}
-                    </h1>
-                    {/* USERNAME */}
-                    <span className="text-[1rem] text-gray-500">
-                      {chatUser?.username} · Instagram
-                    </span>
-                    {/* VIEW PROFILE */}
-                    <Button
-                      onClick={() => navigate(`/home/profile/${chatUser._id}`)}
-                      type="button"
-                      className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-3"
-                    >
-                      View Profile
-                    </Button>
-                  </div>
                   {/* MESSAGES */}
                   <Messages scrollContainerRef={scrollContainerRef} />
                 </div>

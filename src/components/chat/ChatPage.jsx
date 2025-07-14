@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { setChatUser } from "@/redux/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { setChatUser, setMessages } from "@/redux/chatSlice";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -39,9 +39,7 @@ const ChatPage = () => {
   // CURRENT USER CREDENTIALS & SUGGESTED USERS
   const { user, suggestedUsers } = useSelector((store) => store.auth);
   // GETTING SELECTED CHAT USER & ONLINE USERS FROM CHAT SLICE
-  const { chatUser, onlineUsers, messages } = useSelector(
-    (store) => store.chat
-  );
+  const { chatUser, onlineUsers } = useSelector((store) => store.chat);
   // AVATAR FALLBACK MANAGEMENT FOR LOGGED IN USER
   const fullNameInitials = user?.fullName
     ? getFullNameInitials(user?.fullName)
@@ -79,8 +77,6 @@ const ChatPage = () => {
       );
       // IF RESPONSE SUCCESS
       if (response.data.success) {
-        // SETTING MESSAGE IN THE CHAT MESSAGES STATE
-        dispatch(setMessages([...messages, response.data.populatedMessage]));
         // CLEARING MESSAGE FIELD
         setMessageText("");
       }

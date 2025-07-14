@@ -11,9 +11,11 @@ const chatSlice = createSlice({
   },
   reducers: {
     setCurrentConversation: (state, action) => {
+      console.log("setCurrentConversation called", action.payload);
       state.currentConversation = action.payload;
     },
     setChatUser: (state, action) => {
+      console.log("setChatUser called", action.payload);
       state.chatUser = action.payload;
     },
     setOnlineUsers: (state, action) => {

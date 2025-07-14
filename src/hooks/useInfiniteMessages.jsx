@@ -10,22 +10,25 @@ const useInfiniteMessages = () => {
   const chatUserID = chatUser?._id;
   // SETTING CONVERSATION ID BASED ON IF PRESENT
   const conversationID = currentConversation?._id;
+  // SETTING QUERY KEY
+  const queryKey = conversationID || chatUserID;
+  console.log("useInfiniteMessages queryKey:", queryKey);
   // USING INFINITE QUERY FROM REACT QUERY
   const infiniteQuery = useInfiniteQuery({
-    queryKey: ["messages", conversationID, chatUserID],
-    queryFn: ({ pageParam = null }) => {
+    queryKey: ["messages", queryKey],
+    queryFn: async ({ pageParam = null }) => {
       // SETTING URL BASED ON WHICH ID IS PRESENT
       const URL = conversationID
         ? `/message/conversation/${conversationID}/messages`
         : `/message/all/${chatUserID}`;
       // RETURNING RESPONSE
-      return axiosClient
+      return await axiosClient
         .get(URL, { params: { limit: 15, cursor: pageParam } })
         .then((res) => res.data);
     },
     getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
-    cacheTime: 1000 * 60 * 5,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 10,
+    cacheTime: 1000 * 60 * 10,
   });
   // FLATTENING PAGES INTO SINGLE ARRAY & REVERSING ORDER (OLDEST => NEWEST)
   const allMessages =

@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { setPosts, setSinglePost } from "@/redux/postSlice";
 import { useLocation, useNavigate } from "react-router-dom";
-import { setChatUser, setMessages, setOnlineUsers } from "@/redux/chatSlice";
+import { setChatUser, setOnlineUsers } from "@/redux/chatSlice";
 import { MessageCircleMore, MessageSquareMore, UserPlus2 } from "lucide-react";
 import {
   setSuggestedUsers,
@@ -29,7 +29,7 @@ const SocketListener = () => {
     (store) => store.auth
   );
   // GETTING MESSAGES FROM THE CHAT SLICE
-  const { messages } = useSelector((store) => store.chat);
+  const { chatUser, currentConversation } = useSelector((store) => store.chat);
   // GETTING POSTS FROM POST SLICE
   const { posts, singlePost } = useSelector((store) => store.post);
   // DISPATCH
@@ -102,16 +102,33 @@ const SocketListener = () => {
     });
     // LISTENING FOR NEW CHAT MESSAGE SOCKET EVENT
     socketRef.current.on("newMessage", (populatedMessage) => {
-      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
-      queryClient.invalidateQueries(["conversations"]);
       // MESSAGE SENDER
       const messageSender = populatedMessage?.senderId?._id;
       // DISPATCHING THE NEW MESSAGE IN THE MESSAGES ONLY WHEN THE USER IS CURRENTLY IN CHAT
-      if (isOnMessagesPage) {
-        dispatch(setMessages([...messages, populatedMessage]));
+      if (isOnMessagesPage || chatUser || currentConversation) {
+        queryClient.setQueryData(
+          ["messages", currentConversation?._id || chatUser?._id],
+          (old) => {
+            if (!old) return old;
+            const newPages = old.pages.map((page, idx) =>
+              idx === 0
+                ? {
+                    ...page,
+                    messages: [...page.messages, populatedMessage],
+                  }
+                : page
+            );
+            return { ...old, pages: newPages };
+          }
+        );
       }
       // EMITTING TOAST NOTIFICATION IF USER IS NOT ON THE CHAT PAGE
-      if (!isOnMessagesPage && !currentUserId !== messageSender) {
+      if (
+        !isOnMessagesPage &&
+        !currentUserId !== messageSender &&
+        !chatUser &&
+        !currentConversation
+      ) {
         toast(`New Message from ${populatedMessage?.senderId?.fullName}`, {
           icon: <MessageCircleMore />,
           action: {
@@ -340,15 +357,16 @@ const SocketListener = () => {
   }, [
     user,
     posts,
-    messages,
     navigate,
     dispatch,
+    chatUser,
     socketRef,
     singlePost,
     userProfile,
     queryClient,
     currentUserId,
     isOnMessagesPage,
+    currentConversation,
   ]);
 };
 
