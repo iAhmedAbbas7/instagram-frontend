@@ -12,7 +12,6 @@ const useInfiniteMessages = () => {
   const conversationID = currentConversation?._id;
   // SETTING QUERY KEY
   const queryKey = conversationID || chatUserID;
-  console.log("useInfiniteMessages queryKey:", queryKey);
   // USING INFINITE QUERY FROM REACT QUERY
   const infiniteQuery = useInfiniteQuery({
     queryKey: ["messages", queryKey],
