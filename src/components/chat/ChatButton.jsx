@@ -15,8 +15,10 @@ const ChatButton = ({ selectedUsers, setPanelState }) => {
     // DISPATCHING THE CHAT USER IN THE CHAT SLICE
     dispatch(setChatUser(selectedUsers[0]));
     // CHECKING FOR EXISTING CONVERSATION IN THE CONVERSATIONS
-    const existingConversation = allConversations.find((c) =>
-      c.participants.some((p) => p._id === selectedUsers[0]._id)
+    const existingConversation = allConversations.find(
+      (c) =>
+        c?.type === "ONE-TO-ONE" &&
+        c.participants.some((p) => p._id === selectedUsers[0]._id)
     );
     // IF THERE IS AN EXISTING CONVERSATION THEN DISPATCHING IT IN CHAT SLICE
     if (existingConversation) {

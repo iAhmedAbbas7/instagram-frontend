@@ -186,7 +186,10 @@ const ChatBubble = () => {
   // COMPUTING FILTERED SUGGESTED USERS LIST
   const filteredSuggestedUsers = suggestedUsers.filter(
     (u) =>
-      !allConversations.some((c) => c.participants.some((p) => p._id === u._id))
+      !allConversations.some(
+        (c) =>
+          c.type === "ONE-TO-ONE" && c.participants.some((p) => p._id === u._id)
+      )
   );
   // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
   const fullNameInitialsChatUser = chatUser?.fullName
@@ -846,21 +849,21 @@ const ChatBubble = () => {
                           navigate(`/home/profile/${chatUser._id}`)
                         }
                         className={`w-12 h-12 cursor-pointer ${
-                          chatUser?.profilePhoto || chat.avatar === ""
+                          chatUser?.profilePhoto || chat?.avatar === ""
                             ? "bg-gray-300"
                             : "bg-none"
                         } `}
                       >
                         <AvatarImage
                           src={
-                            chat.type === "GROUP"
-                              ? chat.avatar
+                            chat?.type === "GROUP"
+                              ? chat?.avatar
                               : chatUser?.profilePhoto
                           }
                           className="w-12 h-12"
                         />
                         <AvatarFallback>
-                          {chat.type === "GROUP"
+                          {chat?.type === "GROUP"
                             ? groupChatNameInitials
                             : fullNameInitialsChatUser}
                         </AvatarFallback>
@@ -870,18 +873,18 @@ const ChatBubble = () => {
                         <span
                           title={chatUser?.fullName}
                           onClick={() =>
-                            chat.type !== "GROUP" &&
+                            chat?.type !== "GROUP" &&
                             navigate(`/home/profile/${chatUser._id}`)
                           }
                           className="font-semibold text-[1rem]"
                         >
-                          {chat.type === "GROUP"
-                            ? chat.name
+                          {chat?.type === "GROUP"
+                            ? chat?.name
                             : chatUser?.fullName}
                         </span>
                         <span className="text-gray-500 text-sm">
-                          {chat.type === "GROUP"
-                            ? `${chat.participants.length} Members`
+                          {chat?.type === "GROUP"
+                            ? `${chat?.participants?.length} Members`
                             : chatUser?.username}
                         </span>
                       </div>

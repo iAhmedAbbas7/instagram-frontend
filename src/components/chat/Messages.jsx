@@ -177,32 +177,32 @@ const Messages = React.memo(({ scrollContainerRef }) => {
           >
             <AvatarImage
               src={
-                currentConversation.type === "GROUP"
+                currentConversation?.type === "GROUP"
                   ? currentConversation?.avatar
                   : chatUser?.profilePhoto
               }
               className="w-20 h-20"
             />
             <AvatarFallback>
-              {currentConversation.type === "GROUP"
+              {currentConversation?.type === "GROUP"
                 ? currentConversationName
                 : fullNameInitialsChatUser}
             </AvatarFallback>
           </Avatar>
           {/* FULLNAME */}
           <h1 className="font-semibold text-[1.3rem] mt-1">
-            {currentConversation.type === "GROUP"
-              ? currentConversation.name
+            {currentConversation?.type === "GROUP"
+              ? currentConversation?.name
               : chatUser?.fullName}
           </h1>
           {/* USERNAME */}
           <span className="text-[1rem] text-gray-500">
-            {currentConversation.type === "GROUP"
-              ? `${currentConversation.participants.length} Members`
+            {currentConversation?.type === "GROUP"
+              ? `${currentConversation?.participants.length} Members`
               : chatUser?.username}
           </span>
           {/* VIEW PROFILE */}
-          {currentConversation.type !== "GROUP" && (
+          {currentConversation?.type !== "GROUP" && (
             <Button
               onClick={() => navigate(`/home/profile/${chatUser._id}`)}
               type="button"
@@ -212,7 +212,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
             </Button>
           )}
           {/* VIEW SETTINGS */}
-          {currentConversation.type === "GROUP" && (
+          {currentConversation?.type === "GROUP" && (
             <Button
               type="button"
               className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-2"
