@@ -114,7 +114,7 @@ const SocketListener = () => {
               idx === 0
                 ? {
                     ...page,
-                    messages: [...page.messages, populatedMessage],
+                    messages: [populatedMessage, ...page.messages],
                   }
                 : page
             );

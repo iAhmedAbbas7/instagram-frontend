@@ -1,9 +1,12 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
 import Messages from "./Messages";
+import store from "@/redux/store";
 import ChatsList from "./ChatsList";
+import { Button } from "../ui/button";
 import ChatButton from "./ChatButton";
 import axiosClient from "@/utils/axiosClient";
+import GroupChatButton from "./GroupChatButton";
 import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { useCallback, useRef, useState } from "react";
@@ -11,6 +14,7 @@ import { Avatar, AvatarFallback } from "../ui/avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
+import { getImageDataURI } from "@/utils/getImageDataURI";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { setChatUser, setCurrentConversation } from "@/redux/chatSlice";
@@ -19,14 +23,19 @@ import {
   CheckCircle2,
   Circle,
   Edit,
+  Eye,
+  EyeOff,
   Loader2,
   Maximize,
   MessageCircleMore,
+  PlusSquare,
   Search,
   SearchX,
+  Trash2,
+  UserLock,
+  UsersIcon,
   X,
 } from "lucide-react";
-import store from "@/redux/store";
 
 const ChatBubble = () => {
   // DISPATCH
@@ -47,10 +56,22 @@ const ChatBubble = () => {
   } = useSearchUsers("");
   // USING QUERY CLIENT
   const queryClient = useQueryClient();
+  // GROUP AVATAR FILE INPUT REF
+  const groupAvatarRef = useRef();
   // SCROLL CONTAINER REF
   const scrollContainerRef = useRef();
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
   const { allConversations } = useConversations();
+  // GROUP NAME STATE MANAGEMENT
+  const [groupName, setGroupName] = useState("");
+  // GROUP AVATAR STATE MANAGEMENT
+  const [groupAvatar, setGroupAvatar] = useState("");
+  // GROUP AVATAR PREVIEW STATE MANAGEMENT
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  // SHOW GROUP ADMIN VISIBILITY STATE
+  const [showAdmin, setShowAdmin] = useState(true);
+  // GROUP MEMBERS VISIBILITY STATE
+  const [showMembers, setShowMembers] = useState(false);
   // MESSAGE TEXT STATE
   const [messageText, setMessageText] = useState("");
   // SETTING PATHNAME FOR CHAT PAGE
@@ -61,25 +82,24 @@ const ChatBubble = () => {
   const [panelState, setPanelState] = useState("MESSAGES");
   // SELECTED USERS STATE MANAGEMENT
   const [selectedUsers, setSelectedUsers] = useState([]);
-  // CURRENT USER CREDENTIALS
-  const { suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
   const { chatUser } = useSelector((store) => store.chat);
-  // COMPUTING FILTERED SUGGESTED USERS LIST
-  const filteredSuggestedUsers = suggestedUsers.filter(
-    (u) =>
-      !allConversations.some((c) => c.participants.some((p) => p._id === u._id))
-  );
-  // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
-  const fullNameInitialsChatUser = chatUser?.fullName
-    ? getFullNameInitials(chatUser?.fullName)
-    : "";
+  // GETTING CURRENT USER & SUGGESTED USERS FROM AUTH SLICE
+  const { user, suggestedUsers } = useSelector((store) => store.auth);
+  // GETTING CURRENT CONVERSATION AS CHAT FROM CHAT SLICE
+  const { currentConversation: chat } = useSelector((store) => store.chat);
   // SEND MESSAGE HANDLER
   const sendMessageHandler = async (receiverId) => {
     try {
+      // CHECKING THE TYPE OF CURRENT CONVERSATION
+      const isChat = chat?.type === "GROUP";
+      // SETTING THE URL BASED ON CURRENT CONVERSATION TYPE
+      const URL = isChat
+        ? `/message/conversation/${chat._id}/send`
+        : `/message/send/${receiverId}`;
       // MAKING REQUEST
       const response = await axiosClient.post(
-        `/message/send/${receiverId}`,
+        URL,
         { message: messageText },
         {
           headers: {
@@ -150,6 +170,36 @@ const ChatBubble = () => {
         : [...prev, user]
     );
   };
+  // CHANGE FILE HANDLER
+  const changeFileHandler = async (e) => {
+    // SETTING AVATAR
+    const avatar = e.target.files[0];
+    // IF AVATAR AVAILABLE
+    if (avatar) {
+      setGroupAvatar(avatar);
+      // GETTING FILE DATA URL
+      const imageURL = await getImageDataURI(avatar);
+      // SETTING IMAGE PREVIEW
+      setAvatarPreview(imageURL);
+    }
+  };
+  // COMPUTING FILTERED SUGGESTED USERS LIST
+  const filteredSuggestedUsers = suggestedUsers.filter(
+    (u) =>
+      !allConversations.some((c) => c.participants.some((p) => p._id === u._id))
+  );
+  // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
+  const fullNameInitialsChatUser = chatUser?.fullName
+    ? getFullNameInitials(chatUser?.fullName)
+    : "";
+  // AVATAR FALLBACK MANAGEMENT FOR CURRENT USER
+  const fullNameInitialsCurrentUser = user?.fullName
+    ? getFullNameInitials(user?.fullName)
+    : "";
+  // AVATAR FALLBACK MANAGEMENT FOR CURRENT USER
+  const groupChatNameInitials = chat?.name
+    ? getFullNameInitials(chat?.name)
+    : "";
   return (
     <>
       {/* CHAT BUBBLE */}
@@ -481,8 +531,290 @@ const ChatBubble = () => {
               </div>
             </>
           )}
+          {/* GROUP-CHAT PANEL STATE */}
+          {panelState === "GROUP-CHAT" && (
+            <>
+              <div className="w-full h-full flex flex-col items-start justify-between">
+                {/* HEADER */}
+                <div className="w-full px-3 py-3.5 flex items-center justify-between border-b-2 border-gray-200">
+                  {/* BACK AND HEADING */}
+                  <div className="flex items-center gap-2">
+                    {/* BACK BUTTON */}
+                    <div
+                      title="Go Back"
+                      onClick={() => {
+                        setQuery("");
+                        setPanelState("NEW-MESSAGE");
+                        dispatch(setChatUser(null));
+                        dispatch(setCurrentConversation(null));
+                      }}
+                    >
+                      <ArrowLeftIcon
+                        size={25}
+                        className="cursor-pointer hover:text-gray-500"
+                      />
+                    </div>
+                    {/* TEXT */}
+                    <h5 className="text-[1.1rem] font-semibold">Group Chat</h5>
+                  </div>
+                  {/* CLOSE BUTTON */}
+                  <div
+                    title="Close"
+                    onClick={() => {
+                      setQuery("");
+                      setShowMessages(false);
+                      setSelectedUsers([]);
+                      setPanelState("MESSAGES");
+                      dispatch(setChatUser(null));
+                      dispatch(setCurrentConversation(null));
+                    }}
+                  >
+                    <X
+                      size={28}
+                      className="cursor-pointer hover:text-gray-500"
+                    />
+                  </div>
+                </div>
+                {/* CONTENT SECTION */}
+                <div className="w-full flex flex-col items-start flex-1 overflow-y-auto">
+                  {/* GROUP PARTICIPANTS SECTION */}
+                  <div className="w-full flex flex-col items-start justify-start py-2">
+                    {/* ADMIN HEADING */}
+                    <div className="w-full flex items-center justify-between px-3 pb-1">
+                      {/* TEXT SECTION */}
+                      <div className="flex items-center gap-2">
+                        <UserLock size={17} />
+                        <h4 className="text-sm font-semibold">Admin (You)</h4>
+                      </div>
+                      {/* SHOW/HIDE */}
+                      <div
+                        className="cursor-pointer"
+                        title={showAdmin ? "Collapse" : "Show"}
+                        onClick={() => setShowAdmin((prev) => !prev)}
+                      >
+                        {showAdmin ? <EyeOff size={17} /> : <Eye size={17} />}
+                      </div>
+                    </div>
+                    {/* CURRENT USER AVATAR & USERNAME */}
+                    {showAdmin && (
+                      <div className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer">
+                        {/* AVATAR */}
+                        <Avatar
+                          className={`w-11 h-11 cursor-pointer ${
+                            user?.profilePhoto === ""
+                              ? "bg-gray-300"
+                              : "bg-none"
+                          } `}
+                        >
+                          <AvatarImage
+                            src={user?.profilePhoto}
+                            alt={user?.fullName}
+                            className="w-11 h-11"
+                          />
+                          <AvatarFallback>
+                            {fullNameInitialsCurrentUser}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* USERNAME */}
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-[1rem]">
+                            {user?.username}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            {user.fullName}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {/* MEMBERS HEADING */}
+                    <div className="w-full flex items-center justify-between px-3 py-1">
+                      {/* TEXT SECTION */}
+                      <div className="flex items-center gap-2">
+                        <UsersIcon size={17} />
+                        <h4 className="text-sm font-semibold">
+                          Members ({selectedUsers.length})
+                        </h4>
+                      </div>
+                      {/* SHOW/HIDE */}
+                      <div
+                        className="cursor-pointer"
+                        title={showMembers ? "Collapse" : "Show"}
+                        onClick={() => setShowMembers((prev) => !prev)}
+                      >
+                        {showMembers ? <EyeOff size={17} /> : <Eye size={17} />}
+                      </div>
+                    </div>
+                    {/* MEMBERS SECTION */}
+                    {showMembers && (
+                      <div className="w-full flex flex-col items-start justify-start">
+                        {selectedUsers?.map((selectedUser) => {
+                          // AVATAR FALLBACK MANAGEMENT FOR CURRENT USER
+                          const fullNameInitialsSelectedUser =
+                            selectedUser?.fullName
+                              ? getFullNameInitials(selectedUser?.fullName)
+                              : "";
+                          return (
+                            <>
+                              {/* MAIN CONTAINER */}
+                              <div
+                                key={selectedUser._id}
+                                className="w-full flex items-center justify-between hover:bg-gray-100 p-3 cursor-pointer"
+                              >
+                                {/* AVATAR & USERNAME */}
+                                <div className="w-full flex items-center gap-3">
+                                  {/* AVATAR */}
+                                  <Avatar
+                                    className={`w-11 h-11 cursor-pointer ${
+                                      selectedUser?.profilePhoto === ""
+                                        ? "bg-gray-300"
+                                        : "bg-none"
+                                    } `}
+                                  >
+                                    <AvatarImage
+                                      src={selectedUser?.profilePhoto}
+                                      alt={selectedUser?.fullName}
+                                      className="w-11 h-11"
+                                    />
+                                    <AvatarFallback>
+                                      {fullNameInitialsSelectedUser}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {/* USERNAME */}
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-[0.975rem]">
+                                      {selectedUser?.username}
+                                    </span>
+                                    <span className="text-gray-500 text-sm">
+                                      {selectedUser?.fullName}
+                                    </span>
+                                  </div>
+                                </div>
+                                {/* REMOVE ICON */}
+                                <div
+                                  onClick={() =>
+                                    setSelectedUsers((prev) =>
+                                      prev.filter(
+                                        (u) => u._id !== selectedUser._id
+                                      )
+                                    )
+                                  }
+                                  title="Remove"
+                                >
+                                  <Trash2 size={20} className="text-sky-400" />
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {/* GROUP NAME */}
+                  <div className="w-full px-3">
+                    {/* LABEL */}
+                    <label
+                      htmlFor="groupName"
+                      className="text-sm font-semibold"
+                    >
+                      Group Name
+                    </label>
+                    {/* INPUT */}
+                    <input
+                      type="text"
+                      id="groupName"
+                      name="groupName"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      className="w-full p-2 border-2 border-gray-200 outline-none focus:outline-none text-gray-500 placeholder:text-sm text-sm rounded-md"
+                      placeholder="Group Name"
+                      autoComplete="off"
+                      spellCheck="false"
+                    />
+                  </div>
+                  {/* GROUP AVATAR */}
+                  <div className="w-full px-3 py-2">
+                    {/* TEXT & ACTION */}
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-sm font-semibold">Group Avatar</h5>
+                      <div
+                        className="cursor-pointer"
+                        onClick={
+                          avatarPreview
+                            ? () => {
+                                setGroupAvatar("");
+                                setAvatarPreview("");
+                              }
+                            : () => groupAvatarRef.current.click()
+                        }
+                        title={
+                          avatarPreview ? "Remove Avatar" : "Choose Avatar"
+                        }
+                      >
+                        {avatarPreview ? (
+                          <Trash2 size={17} />
+                        ) : (
+                          <PlusSquare size={17} />
+                        )}
+                      </div>
+                    </div>
+                    {/* AVATAR INPUT */}
+                    <input
+                      ref={groupAvatarRef}
+                      name="avatar"
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={changeFileHandler}
+                    />
+                    {/* AVATAR PREVIEW */}
+                    <div className="w-full flex items-center justify-center py-6">
+                      <Avatar
+                        className={`w-25 h-25 ${
+                          avatarPreview ? "bg-none" : "bg-gray-200"
+                        } flex items-center justify-center`}
+                      >
+                        <AvatarImage
+                          src={avatarPreview}
+                          alt="Group Avatar"
+                          className="w-25 h-25"
+                        />
+                      </Avatar>
+                    </div>
+                  </div>
+                </div>
+                {/* FOOTER */}
+                <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-t-2 border-gray-200">
+                  {/* DISCARD GROUP */}
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setGroupName("");
+                      setGroupAvatar("");
+                      setSelectedUsers([]);
+                      setAvatarPreview(null);
+                      dispatch(setChatUser(null));
+                      setPanelState("NEW-MESSAGE");
+                      dispatch(setCurrentConversation(null));
+                    }}
+                    className="bg-sky-400 hover:bg-sky-500 text-white text-[1rem] focus:outline-none rounded-md cursor-pointer font-semibold border-none outline-none"
+                  >
+                    <Trash2 />
+                    <h5>Discard Group</h5>
+                  </Button>
+                  {/* CREATE GROUP */}
+                  <GroupChatButton
+                    groupName={groupName}
+                    groupAvatar={groupAvatar}
+                    selectedUsers={selectedUsers}
+                  />
+                </div>
+              </div>
+            </>
+          )}
           {/* ACTIVE CHAT PANEL STATE */}
-          {panelState === "CHAT" && chatUser !== null && (
+          {panelState === "CHAT" && (chatUser || chat) !== null && (
             <>
               {/* CHAT MAIN CONTAINER */}
               <div className="w-full h-full flex flex-col items-start justify-between">
@@ -514,18 +846,23 @@ const ChatBubble = () => {
                           navigate(`/home/profile/${chatUser._id}`)
                         }
                         className={`w-12 h-12 cursor-pointer ${
-                          chatUser?.profilePhoto === ""
+                          chatUser?.profilePhoto || chat.avatar === ""
                             ? "bg-gray-300"
                             : "bg-none"
                         } `}
                       >
                         <AvatarImage
-                          src={chatUser?.profilePhoto}
-                          alt={chatUser?.fullName}
+                          src={
+                            chat.type === "GROUP"
+                              ? chat.avatar
+                              : chatUser?.profilePhoto
+                          }
                           className="w-12 h-12"
                         />
                         <AvatarFallback>
-                          {fullNameInitialsChatUser}
+                          {chat.type === "GROUP"
+                            ? groupChatNameInitials
+                            : fullNameInitialsChatUser}
                         </AvatarFallback>
                       </Avatar>
                       {/* USERNAME */}
@@ -533,14 +870,19 @@ const ChatBubble = () => {
                         <span
                           title={chatUser?.fullName}
                           onClick={() =>
+                            chat.type !== "GROUP" &&
                             navigate(`/home/profile/${chatUser._id}`)
                           }
                           className="font-semibold text-[1rem]"
                         >
-                          {chatUser?.fullName}
+                          {chat.type === "GROUP"
+                            ? chat.name
+                            : chatUser?.fullName}
                         </span>
                         <span className="text-gray-500 text-sm">
-                          {chatUser?.username}
+                          {chat.type === "GROUP"
+                            ? `${chat.participants.length} Members`
+                            : chatUser?.username}
                         </span>
                       </div>
                     </div>

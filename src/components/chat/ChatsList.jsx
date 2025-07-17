@@ -73,7 +73,7 @@ const ChatsList = ({ setPanelState }) => {
                   key={chat._id}
                   onClick={() => {
                     dispatch(setCurrentConversation(chat));
-                    dispatch(setChatUser(other));
+                    chat.type === "ONE-TO-ONE" && dispatch(setChatUser(other));
                     setPanelState("CHAT");
                   }}
                   ref={isLast ? lastRef : undefined}
@@ -86,34 +86,51 @@ const ChatsList = ({ setPanelState }) => {
                     } `}
                   >
                     <AvatarImage
-                      src={other?.profilePhoto}
-                      alt={other?.fullName}
+                      src={
+                        chat.type === "GROUP"
+                          ? chat?.avatar
+                          : other?.profilePhoto
+                      }
+                      alt={chat.type === "GROUP" ? chat?.name : other?.fullName}
                       className="w-13 h-13"
                     />
                     <AvatarFallback>{fullNameInitials}</AvatarFallback>
                   </Avatar>
                   {/* USERNAME */}
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-[1rem] flex items-center gap-2">
-                      <span>{other?.fullName}</span>
-                      {/* ONLINE SIGNAL */}
-                      {isOnline && (
-                        <div
-                          title="Online"
-                          className="w-3 h-3 rounded-full bg-green-500"
-                        ></div>
-                      )}
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      {other?.username}
-                    </span>
-                    {/* LAST ACTIVE TIME */}
-                    {!isOnline && (
-                      <span className="text-[0.7rem] text-gray-500">
-                        Active {lastActiveTime} ago
+                  {chat.type === "ONE-TO-ONE" && (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-[1rem] flex items-center gap-2">
+                        <span>{other?.fullName}</span>
+                        {/* ONLINE SIGNAL */}
+                        {isOnline && (
+                          <div
+                            title="Online"
+                            className="w-3 h-3 rounded-full bg-green-500"
+                          ></div>
+                        )}
                       </span>
-                    )}
-                  </div>
+                      <span className="text-gray-500 text-sm">
+                        {other?.username}
+                      </span>
+                      {/* LAST ACTIVE TIME */}
+                      {!isOnline && (
+                        <span className="text-[0.7rem] text-gray-500">
+                          Active {lastActiveTime} ago
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* GROUP NAME */}
+                  {chat.type === "GROUP" && (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-[1rem]">
+                        {chat?.name}
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        {chat.participants.length} Members
+                      </span>
+                    </div>
+                  )}
                 </div>
               </>
             );

@@ -30,7 +30,11 @@ const ChatButton = ({ selectedUsers, setPanelState }) => {
     <Button
       type="button"
       disabled={selectedUsers.length === 0}
-      onClick={handleChatCreation}
+      onClick={
+        selectedUsers.length === 1
+          ? handleChatCreation
+          : () => setPanelState("GROUP-CHAT")
+      }
       className="w-full bg-sky-400 hover:bg-sky-500 text-white font-semibold text-[1rem] border-none outline-none focus:outline-none rounded-md cursor-pointer"
     >
       <MessageCircleMore size={20} />

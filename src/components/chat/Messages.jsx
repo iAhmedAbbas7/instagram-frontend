@@ -32,7 +32,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   // CURRENT USER CREDENTIALS FROM AUTH SLICE
   const { user } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
-  const { chatUser } = useSelector((store) => store.chat);
+  const { chatUser, currentConversation } = useSelector((store) => store.chat);
   // INTERSECTION OBSERVER HANDLER TO FETCH MESSAGES ON SCROLL
   const handleIntersect = useCallback(
     ([entry]) => {
@@ -156,6 +156,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const fullNameInitialsChatUser = chatUser?.fullName
     ? getFullNameInitials(chatUser?.fullName)
     : "";
+  // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
+  const currentConversationName = currentConversation?.name
+    ? getFullNameInitials(currentConversation?.name)
+    : "";
   // IF THE INITIAL LOADING CALL IS ONGOING
   if (initialLoading) {
     return null;
@@ -172,28 +176,50 @@ const Messages = React.memo(({ scrollContainerRef }) => {
             } `}
           >
             <AvatarImage
-              src={chatUser?.profilePhoto}
-              alt={chatUser?.fullName}
+              src={
+                currentConversation.type === "GROUP"
+                  ? currentConversation?.avatar
+                  : chatUser?.profilePhoto
+              }
               className="w-20 h-20"
             />
-            <AvatarFallback>{fullNameInitialsChatUser}</AvatarFallback>
+            <AvatarFallback>
+              {currentConversation.type === "GROUP"
+                ? currentConversationName
+                : fullNameInitialsChatUser}
+            </AvatarFallback>
           </Avatar>
           {/* FULLNAME */}
           <h1 className="font-semibold text-[1.3rem] mt-1">
-            {chatUser?.fullName}
+            {currentConversation.type === "GROUP"
+              ? currentConversation.name
+              : chatUser?.fullName}
           </h1>
           {/* USERNAME */}
           <span className="text-[1rem] text-gray-500">
-            {chatUser?.username} · Instagram
+            {currentConversation.type === "GROUP"
+              ? `${currentConversation.participants.length} Members`
+              : chatUser?.username}
           </span>
           {/* VIEW PROFILE */}
-          <Button
-            onClick={() => navigate(`/home/profile/${chatUser._id}`)}
-            type="button"
-            className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-3"
-          >
-            View Profile
-          </Button>
+          {currentConversation.type !== "GROUP" && (
+            <Button
+              onClick={() => navigate(`/home/profile/${chatUser._id}`)}
+              type="button"
+              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-2"
+            >
+              View Profile
+            </Button>
+          )}
+          {/* VIEW SETTINGS */}
+          {currentConversation.type === "GROUP" && (
+            <Button
+              type="button"
+              className="bg-sky-400 hover:bg-sky-500 font-medium focus:outline-none outline-none border-none text-white text-[1rem] cursor-pointer mt-2"
+            >
+              View Settings
+            </Button>
+          )}
         </div>
       )}
       {/* MESSAGES SECTION */}
