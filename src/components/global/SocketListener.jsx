@@ -24,14 +24,14 @@ import {
 } from "@/redux/notificationSlice";
 
 const SocketListener = () => {
+  // GETTING POSTS & SINGLE POST FROM POST SLICE
+  const { posts, singlePost } = useSelector((store) => store.post);
+  // GETTING CHAT USER & CURRENT CONVERSATION FROM THE CHAT SLICE
+  const { chatUser, currentConversation } = useSelector((store) => store.chat);
   // CURRENT USER ,CURRENT USER & SUGGESTED USERS PROFILE CREDENTIALS
   const { user, userProfile, suggestedUsers } = useSelector(
     (store) => store.auth
   );
-  // GETTING MESSAGES FROM THE CHAT SLICE
-  const { chatUser, currentConversation } = useSelector((store) => store.chat);
-  // GETTING POSTS FROM POST SLICE
-  const { posts, singlePost } = useSelector((store) => store.post);
   // DISPATCH
   const dispatch = useDispatch();
   // LOCATION
@@ -44,20 +44,78 @@ const SocketListener = () => {
   const socketRef = useSocketRef();
   // QUERY CLIENT
   const queryClient = useQueryClient();
-  // MESSAGES ROUTE PATH
-  const isOnMessagesPage = location.pathname.startsWith("/home/chat");
-  // SETTING CURRENT USER ID
-  const currentUserId = user?._id;
-  // KEEPING A REFERENCE OF THE SUGGESTED USERS IN THE REF
+  // POSTS REF
+  const postsRef = useRef(posts);
+  // CHAT USER REF
+  const chatUserRef = useRef(chatUser);
+  // SINGLE POST REF
+  const singlePostRef = useRef(singlePost);
+  // USER PROFILE REF
+  const userProfileRef = useRef(userProfile);
+  // CURRENT CONVERSATION REF
+  const chatRef = useRef(currentConversation);
+  // SUGGESTED USERS REF
   const suggestedUsersRef = useRef(suggestedUsers);
+  // DISPATCH REF
+  const dispatchRef = useRef(dispatch);
+  // NAVIGATION REF
+  const navigationRef = useRef(navigate);
+  // CURRENT USER ID REF
+  const currentUserIdRef = useRef(user?._id);
+  // QUERY CLIENT REF
+  const queryClientRef = useRef(queryClient);
+  // MESSAGE PAGE REF
+  const isOnMessagesPageRef = useRef(
+    location.pathname.startsWith("/home/chat")
+  );
+  // SYNCING THE DISPATCH IN THE REF
+  useEffect(() => {
+    dispatchRef.current = dispatch;
+  }, [dispatch]);
+  // SYNCING THE NAVIGATE IN THE REF
+  useEffect(() => {
+    navigationRef.current = navigate;
+  }, [navigate]);
+  // SYNCING THE QUERY CLIENT IN THE REF
+  useEffect(() => {
+    queryClientRef.current = queryClient;
+  }, [queryClient]);
+  // SYNCING THE CURRENT USER ID IN THE REF
+  useEffect(() => {
+    currentUserIdRef.current = user?._id;
+  }, [user]);
+  // SYNCING THE MESSAGE ROUTE LOCATION IN THE REF
+  useEffect(() => {
+    isOnMessagesPageRef.current = location.pathname.startsWith("/home/chat");
+  }, [location.pathname]);
   // SYNCING THE LATEST SUGGESTED USERS IN THE REF
   useEffect(() => {
     suggestedUsersRef.current = suggestedUsers;
   }, [suggestedUsers]);
+  // SYNCING THE LATEST POSTS IN THE REF
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+  // SYNCING THE LATEST CHAT USER IN THE REF
+  useEffect(() => {
+    chatUserRef.current = chatUser;
+  }, [chatUser]);
+  // SYNCING THE LATEST SINGLE POST IN THE REF
+  useEffect(() => {
+    singlePostRef.current = singlePost;
+  }, [singlePost]);
+  // SYNCING THE LATEST USER PROFILE IN THE REF
+  useEffect(() => {
+    userProfileRef.current = userProfile;
+  }, [userProfile]);
+  // SYNCING THE LATEST CURRENT CONVERSATION IN THE REF
+  useEffect(() => {
+    chatRef.current = currentConversation;
+  }, [currentConversation]);
   // INITIALIZING SOCKET CONNECTION FOR CLIENT SIDE
   useEffect(() => {
     // IF USER DOES NOT EXISTS, THEN RETURNING
-    if (!user) return;
+    if (!user || !socketRef.current) return;
     // SERVER URL
     const serverURL = "http://localhost:8080";
     // INITIATING SOCKET
@@ -84,20 +142,22 @@ const SocketListener = () => {
           const now = new Date().toISOString();
           // UPDATING THE LAST ACTIVE TIME FOR THE USER
           wentOffline.forEach((userId) =>
-            dispatch(updateSuggestedUserLastActive({ userId, lastActive: now }))
+            dispatchRef.current(
+              updateSuggestedUserLastActive({ userId, lastActive: now })
+            )
           );
         }
       }
       // UPDATING THE ONLINE USERS REF
       onlineUsersRef.current = onlineUsers;
       // DISPATCHING THE ONLINE USERS IN THE CHAT SLICE
-      dispatch(setOnlineUsers(onlineUsers));
+      dispatchRef.current(setOnlineUsers(onlineUsers));
       // FETCHING THE LATEST SUGGESTED USER DATA
       const response = await axiosClient.get("/user/suggestedUsers");
       // IF RESPONSE SUCCESS
       if (response.data.success) {
         // DISPATCHING THE LATEST SUGGESTED USERS IN THE AUTH SLICE
-        dispatch(setSuggestedUsers(response.data.users));
+        dispatchRef.current(setSuggestedUsers(response.data.users));
       }
     });
     // LISTENING FOR NEW CHAT MESSAGE SOCKET EVENT
@@ -105,9 +165,13 @@ const SocketListener = () => {
       // MESSAGE SENDER
       const messageSender = populatedMessage?.senderId?._id;
       // DISPATCHING THE NEW MESSAGE IN THE MESSAGES ONLY WHEN THE USER IS CURRENTLY IN CHAT
-      if (isOnMessagesPage || chatUser || currentConversation) {
-        queryClient.setQueryData(
-          ["messages", currentConversation?._id || chatUser?._id],
+      if (
+        isOnMessagesPageRef.current ||
+        chatUserRef.current ||
+        chatRef.current
+      ) {
+        queryClientRef.current.setQueryData(
+          ["messages", chatRef.current?._id || chatUserRef.current?._id],
           (old) => {
             if (!old) return old;
             const newPages = old.pages.map((page, idx) =>
@@ -124,10 +188,10 @@ const SocketListener = () => {
       }
       // EMITTING TOAST NOTIFICATION IF USER IS NOT ON THE CHAT PAGE
       if (
-        !isOnMessagesPage &&
-        !currentUserId !== messageSender &&
-        !chatUser &&
-        !currentConversation
+        !isOnMessagesPageRef.current &&
+        currentUserIdRef.current !== messageSender &&
+        !chatUserRef.current &&
+        !chatRef.current
       ) {
         toast(`New Message from ${populatedMessage?.senderId?.fullName}`, {
           icon: <MessageCircleMore />,
@@ -135,9 +199,9 @@ const SocketListener = () => {
             label: "View",
             onClick: () => {
               // NAVIGATING TO THE CHAT PAGE
-              navigate("/home/chat");
+              navigationRef.current("/home/chat");
               // DISPATCHING CHAT USER IN THE CHAT SLICE
-              dispatch(setChatUser(populatedMessage?.senderId));
+              dispatchRef.current(setChatUser(populatedMessage?.senderId));
             },
           },
         });
@@ -146,9 +210,9 @@ const SocketListener = () => {
     // LISTENING FOR LIKE OR UNLIKE POST SOCKET EVENT
     socketRef.current.on("notification", (notification) => {
       // INCREMENTING OR DECREMENTING THE POST LIKES COUNT BASED ON ACTION TYPE
-      if (currentUserId !== notification?.likingUser?._id) {
+      if (currentUserIdRef.current !== notification?.likingUser?._id) {
         // UPDATING THE GLOBAL FEED POSTS
-        const updatedPosts = posts?.map((p) =>
+        const updatedPosts = postsRef.current?.map((p) =>
           p?._id === notification?.postId
             ? {
                 ...p,
@@ -160,11 +224,11 @@ const SocketListener = () => {
             : p
         );
         // DISPATCHING THE UPDATED GLOBAL FEED POSTS
-        dispatch(setPosts(updatedPosts));
+        dispatchRef.current(setPosts(updatedPosts));
         // IF USER PROFILE EXISTS
-        if (userProfile !== null) {
+        if (userProfileRef.current !== null) {
           // UPDATING THE USER PROFILE POSTS
-          const updatedUserPosts = userProfile?.posts.map((p) =>
+          const updatedUserPosts = userProfileRef.current?.posts.map((p) =>
             p?._id === notification?.postId
               ? {
                   ...p,
@@ -176,22 +240,22 @@ const SocketListener = () => {
               : p
           );
           // DISPATCHING THE UPDATED USER PROFILE POSTS
-          dispatch(
+          dispatchRef.current(
             setUserProfile({
-              ...userProfile,
+              ...userProfileRef.current,
               posts: updatedUserPosts,
             })
           );
         }
         // UPDATING THE SINGLE POST LIKES
-        if (notification?.postId === singlePost._id) {
-          dispatch(
+        if (notification?.postId === singlePostRef.current._id) {
+          dispatchRef.current(
             setSinglePost({
-              ...singlePost,
+              ...singlePostRef.current,
               likes:
                 notification?.type === "like"
-                  ? [...singlePost.likes, notification?.userId]
-                  : singlePost.likes.filter(
+                  ? [...singlePostRef.current.likes, notification?.userId]
+                  : singlePostRef.current.likes.filter(
                       (id) => id !== notification?.userId
                     ),
             })
@@ -199,14 +263,14 @@ const SocketListener = () => {
         }
       }
       // DISPATCHING NOTIFICATIONS FOR THE POST OWNER
-      if (notification.postAuthorId === currentUserId) {
+      if (notification.postAuthorId === currentUserIdRef.current) {
         // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
-        dispatch(setLikeNotifications(notification));
+        dispatchRef.current(setLikeNotifications(notification));
       }
       // TOASTING LIVE NOTIFICATION TO THE POST OWNER ON LIKE EVENT
       if (
         notification?.type === "like" &&
-        notification?.postAuthorId === currentUserId
+        notification?.postAuthorId === currentUserIdRef.current
       ) {
         toast(
           <div className="flex items-center gap-2">
@@ -224,58 +288,61 @@ const SocketListener = () => {
     // LISTENING FOR COMMENT ON POST SOCKET EVENT
     socketRef.current.on("comment", ({ notification, comment }) => {
       // ADDING COMMENT TO THE POST BASED ON WHO COMMENTED
-      if (currentUserId !== notification?.commentingUser?._id) {
+      if (currentUserIdRef.current !== notification?.commentingUser?._id) {
         // UPDATING THE GLOBAL FEED POSTS
-        const updatedPosts = posts?.map((p) =>
+        const updatedPosts = postsRef.current?.map((p) =>
           p?._id === notification?.postId
             ? { ...p, comments: [comment, ...p.comments] }
             : p
         );
         // DISPATCHING THE UPDATED POSTS
-        dispatch(setPosts(updatedPosts));
+        dispatchRef.current(setPosts(updatedPosts));
         // IF USER PROFILE EXISTS
-        if (userProfile !== null) {
+        if (userProfileRef.current !== null) {
           // UPDATING THE USER PROFILE POSTS
-          const updatedUserPosts = userProfile?.posts.map((p) =>
+          const updatedUserPosts = userProfileRef.current?.posts.map((p) =>
             p?._id === notification?.postId
               ? { ...p, comments: [comment, ...p.comments] }
               : p
           );
           // DISPATCHING THE UPDATED USER PROFILE POSTS
-          dispatch(
+          dispatchRef.current(
             setUserProfile({
-              ...userProfile,
+              ...userProfileRef.current,
               posts: updatedUserPosts,
             })
           );
         }
         // UPDATING THE SINGLE POST COMMENTS
-        queryClient.setQueryData(["comments", notification?.postId], (old) => {
-          if (!old) return old;
-          const newPages = old.pages.map((page, idx) =>
-            idx === 0
-              ? {
-                  ...page,
-                  comments: [comment, ...page.comments],
-                  totalComments: page.totalComments + 1,
-                }
-              : page
-          );
-          return { ...old, pages: newPages };
-        });
+        queryClientRef.current.setQueryData(
+          ["comments", notification?.postId],
+          (old) => {
+            if (!old) return old;
+            const newPages = old.pages.map((page, idx) =>
+              idx === 0
+                ? {
+                    ...page,
+                    comments: [comment, ...page.comments],
+                    totalComments: page.totalComments + 1,
+                  }
+                : page
+            );
+            return { ...old, pages: newPages };
+          }
+        );
       }
       // DISPATCHING NOTIFICATIONS FOR THE POST OWNER
       if (
-        notification.postAuthorId === currentUserId &&
-        notification?.commentingUser?._id !== currentUserId
+        notification.postAuthorId === currentUserIdRef.current &&
+        notification?.commentingUser?._id !== currentUserIdRef.current
       ) {
         // DISPATCHING THE NOTIFICATION IN THE NOTIFICATION SLICE
-        dispatch(setCommentNotifications(notification));
+        dispatchRef.current(setCommentNotifications(notification));
       }
       // TOASTING & DISPATCHING NOTIFICATION TO THE POST OWNER ON COMMENT EVENT
       if (
-        notification?.postAuthorId === currentUserId &&
-        notification?.commentingUser?._id !== currentUserId
+        notification?.postAuthorId === currentUserIdRef.current &&
+        notification?.commentingUser?._id !== currentUserIdRef.current
       ) {
         toast(
           <div className="flex items-center gap-2">
@@ -295,14 +362,14 @@ const SocketListener = () => {
       // DESTRUCTURING NOTIFICATION OBJECT
       const { type, followedUserId, followingUserId } = notification;
       // UPDATING THE USER FOLLOWERS BASED ON ACTION TYPE
-      if (currentUserId === followedUserId) {
+      if (currentUserIdRef.current === followedUserId) {
         // CREATING NEW FOLLOWERS OBJECT
         const newFollowers =
           type === "follow"
             ? [followingUserId, ...user.followers]
             : user?.followers?.filter((id) => id !== followingUserId);
         // DISPATCHING THE UPDATED USER IN THE AUTH SLICE
-        dispatch(setUser({ ...user, followers: newFollowers }));
+        dispatchRef.current(setUser({ ...user, followers: newFollowers }));
         // IF THE FOLLOWING USER WAS IN SUGGESTED LIST UPDATING ITS FOLLOWING LIST
         const wasSuggestedUser = suggestedUsersRef.current.some(
           (u) => u._id === followingUserId
@@ -322,7 +389,7 @@ const SocketListener = () => {
               : u
           );
           // DISPATCHING THE UPDATED SUGGESTED USERS IN THE AUTH SLICE
-          dispatch(setSuggestedUsers(updatedSuggestedUsers));
+          dispatchRef.current(setSuggestedUsers(updatedSuggestedUsers));
         }
         // TOASTING A LIVE NOTIFICATION TO THE FOLLOWED USER
         if (notification?.type === "follow") {
@@ -339,35 +406,25 @@ const SocketListener = () => {
           );
         }
         // DISPATCHING THE NOTIFICATION IN NOTIFICATION SLICE
-        dispatch(setFollowNotifications(notification));
+        dispatchRef.current(setFollowNotifications(notification));
       }
     });
     // LISTENING FOR NEW CONVERSATION SOCKET EVENT
     socketRef.current.on("newConversation", () => {
       // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
-      queryClient.invalidateQueries(["conversations"]);
+      queryClientRef.current.invalidateQueries(["conversations"]);
     });
     // CLEANUP FUNCTION
     return () => {
       // CLOSING THE SOCKET CONNECTION
       socketRef.current.close();
       // CLOSING THE SOCKET NEW MESSAGE LISTENER
-      socketRef.current.off("newMessage");
+      socketRef.current.off();
     };
-  }, [
-    user,
-    posts,
-    navigate,
-    dispatch,
-    chatUser,
-    socketRef,
-    singlePost,
-    userProfile,
-    queryClient,
-    currentUserId,
-    isOnMessagesPage,
-    currentConversation,
-  ]);
+  }, [user, socketRef]);
+
+  // RETURNING NULL
+  return null;
 };
 
 export default SocketListener;
