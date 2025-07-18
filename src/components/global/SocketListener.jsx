@@ -114,8 +114,8 @@ const SocketListener = () => {
   }, [currentConversation]);
   // INITIALIZING SOCKET CONNECTION FOR CLIENT SIDE
   useEffect(() => {
-    // IF USER DOES NOT EXISTS, THEN RETURNING
-    if (!user || !socketRef.current) return;
+    // IF USER DOES NOT EXISTS OR SOCKET CONNECTED, THEN RETURNING
+    if (!user || socketRef.current?.connected) return;
     // SERVER URL
     const serverURL = "http://localhost:8080";
     // INITIATING SOCKET
@@ -420,6 +420,8 @@ const SocketListener = () => {
       socketRef.current.close();
       // CLOSING THE SOCKET NEW MESSAGE LISTENER
       socketRef.current.off();
+      // CLEARING SOCKET ON UNMOUNT
+      socketRef.current = null;
     };
   }, [user, socketRef]);
 
