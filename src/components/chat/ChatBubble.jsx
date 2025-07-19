@@ -188,7 +188,8 @@ const ChatBubble = () => {
     (u) =>
       !allConversations.some(
         (c) =>
-          c.type === "ONE-TO-ONE" && c.participants.some((p) => p._id === u._id)
+          c?.type === "ONE-TO-ONE" &&
+          c.participants.some((p) => p._id === u._id)
       )
   );
   // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
