@@ -61,7 +61,7 @@ const ChatBubble = () => {
   // SCROLL CONTAINER REF
   const scrollContainerRef = useRef();
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
-  const { allConversations } = useConversations();
+  const { chatUsers } = useConversations();
   // GROUP NAME STATE MANAGEMENT
   const [groupName, setGroupName] = useState("");
   // GROUP AVATAR STATE MANAGEMENT
@@ -138,6 +138,10 @@ const ChatBubble = () => {
             return { ...oldData, pages: newPages };
           });
         }
+        // IF CURRENT CONVERSATION NOT SET
+        if (!currentConversation) {
+          dispatch(setCurrentConversation(response.data.conversation));
+        }
       }
     } catch (error) {
       // LOGGING ERROR MESSAGE
@@ -185,12 +189,7 @@ const ChatBubble = () => {
   };
   // COMPUTING FILTERED SUGGESTED USERS LIST
   const filteredSuggestedUsers = suggestedUsers.filter(
-    (u) =>
-      !allConversations.some(
-        (c) =>
-          c?.type === "ONE-TO-ONE" &&
-          c.participants.some((p) => p._id === u._id)
-      )
+    (u) => !chatUsers.includes(u._id)
   );
   // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
   const fullNameInitialsChatUser = chatUser?.fullName
@@ -812,6 +811,7 @@ const ChatBubble = () => {
                     groupName={groupName}
                     groupAvatar={groupAvatar}
                     selectedUsers={selectedUsers}
+                    setPanelState={setPanelState}
                   />
                 </div>
               </div>

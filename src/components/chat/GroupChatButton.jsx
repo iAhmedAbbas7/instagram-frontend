@@ -4,8 +4,17 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import axiosClient from "@/utils/axiosClient";
 import { Loader2, Users2 } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { setCurrentConversation } from "@/redux/chatSlice";
 
-const GroupChatButton = ({ groupName, groupAvatar, selectedUsers }) => {
+const GroupChatButton = ({
+  groupName,
+  groupAvatar,
+  selectedUsers,
+  setPanelState,
+}) => {
+  // DISPATCH
+  const dispatch = useDispatch();
   // LOADING STATE
   const [loading, setLoading] = useState(false);
   // SETTING GROUP PARTICIPANTS
@@ -42,6 +51,10 @@ const GroupChatButton = ({ groupName, groupAvatar, selectedUsers }) => {
       if (response.data.success) {
         // TOASTING ERROR MESSAGE
         toast.success("Group Chat Created Successfully !");
+        // DISPATCHING THE CONVERSATION AS CURRENT CONVERSATION
+        dispatch(setCurrentConversation(response.data.conversation));
+        // SETTING THE PANEL STATE TO CHAT
+        setPanelState("CHAT");
       }
     } catch (error) {
       // LOGGING ERROR MESSAGE

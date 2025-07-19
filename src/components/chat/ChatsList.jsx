@@ -61,7 +61,9 @@ const ChatsList = ({ setPanelState }) => {
             // SETTING REF FOR THE LAST CHAT
             const isLast = idx === allConversations.length - 1;
             // SETTING OTHER CHAT PARTICIPANT
-            const other = chat?.participants?.find((p) => p._id !== user._id);
+            const other = chat?.participants?.find(
+              (p) => String(p.userId._id) !== user._id
+            )?.userId;
             // ONLINE FLAG
             const isOnline = onlineUsers?.includes(other?._id);
             // LAST ACTIVE TIME
@@ -73,74 +75,77 @@ const ChatsList = ({ setPanelState }) => {
               ? getFullNameInitials(other?.fullName)
               : "";
             return (
-              <div
-                key={chat._id}
-                onClick={() => {
-                  dispatch(setCurrentConversation(chat));
-                  if (chat.type === "ONE-TO-ONE" && other) {
-                    dispatch(setChatUser(other));
-                  }
-                  setPanelState("CHAT");
-                }}
-                ref={isLast ? lastRef : undefined}
-                className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
-              >
-                {/* AVATAR */}
-                <Avatar
-                  className={`w-13 h-13 cursor-pointer ${
-                    other?.profilePhoto === "" ? "bg-gray-300" : "bg-none"
-                  } `}
-                >
-                  <AvatarImage
-                    src={
-                      chat?.type === "GROUP"
-                        ? chat?.avatar
-                        : other?.profilePhoto
+              <>
+                {/* AVATAR & USERNAME */}
+                <div
+                  key={chat._id}
+                  onClick={() => {
+                    dispatch(setCurrentConversation(chat));
+                    if (chat.type === "ONE-TO-ONE" && other) {
+                      dispatch(setChatUser(other));
                     }
-                    className="w-13 h-13"
-                  />
-                  <AvatarFallback>
-                    {chat?.type === "GROUP"
-                      ? chatNameInitials
-                      : fullNameInitials}
-                  </AvatarFallback>
-                </Avatar>
-                {/* USERNAME */}
-                {chat?.type === "ONE-TO-ONE" && (
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-[1rem] flex items-center gap-2">
-                      <span>{other?.fullName}</span>
-                      {/* ONLINE SIGNAL */}
-                      {isOnline && (
-                        <div
-                          title="Online"
-                          className="w-3 h-3 rounded-full bg-green-500"
-                        ></div>
-                      )}
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      {other?.username}
-                    </span>
-                    {/* LAST ACTIVE TIME */}
-                    {!isOnline && (
-                      <span className="text-[0.7rem] text-gray-500">
-                        Active {lastActiveTime} ago
+                    setPanelState("CHAT");
+                  }}
+                  ref={isLast ? lastRef : undefined}
+                  className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
+                >
+                  {/* AVATAR */}
+                  <Avatar
+                    className={`w-13 h-13 cursor-pointer ${
+                      other?.profilePhoto === "" ? "bg-gray-300" : "bg-none"
+                    } `}
+                  >
+                    <AvatarImage
+                      src={
+                        chat?.type === "GROUP"
+                          ? chat?.avatar
+                          : other?.profilePhoto
+                      }
+                      className="w-13 h-13"
+                    />
+                    <AvatarFallback>
+                      {chat?.type === "GROUP"
+                        ? chatNameInitials
+                        : fullNameInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* USERNAME */}
+                  {chat?.type === "ONE-TO-ONE" && (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-[1rem] flex items-center gap-2">
+                        <span>{other?.fullName}</span>
+                        {/* ONLINE SIGNAL */}
+                        {isOnline && (
+                          <div
+                            title="Online"
+                            className="w-3 h-3 rounded-full bg-green-500"
+                          ></div>
+                        )}
                       </span>
-                    )}
-                  </div>
-                )}
-                {/* GROUP NAME */}
-                {chat?.type === "GROUP" && (
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-[1rem]">
-                      {chat?.name}
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      {chat.participants.length} Members
-                    </span>
-                  </div>
-                )}
-              </div>
+                      <span className="text-gray-500 text-sm">
+                        {other?.username}
+                      </span>
+                      {/* LAST ACTIVE TIME */}
+                      {!isOnline && (
+                        <span className="text-[0.7rem] text-gray-500">
+                          Active {lastActiveTime} ago
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* GROUP NAME */}
+                  {chat?.type === "GROUP" && (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-[1rem]">
+                        {chat?.name}
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        {chat.participants.length} Members
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
             );
           })}
           {/* FETCHING NEXT PAGE */}

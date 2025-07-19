@@ -1,6 +1,7 @@
 // <= IMPORTS =>
 import axiosClient from "@/utils/axiosClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 const useConversations = () => {
   // USING INFINITE QUERY FROM REACT QUERY
@@ -19,9 +20,18 @@ const useConversations = () => {
   // FLATTENING CONVERSATIONS IN TO ONE ARRAY FOR RENDERING
   const allConversations =
     infiniteQuery.data?.pages.flatMap((p) => p.conversations) ?? [];
+  // FLATTENING ALL CHAT USER IDS IN TO ONE ARRAY FOR RENDERING
+  const chatUsers = useMemo(() => {
+    // GETTING IDS FROM THE CHAT USERS ARRAY
+    const userIds = infiniteQuery.data
+      ? infiniteQuery.data.pages.flatMap((p) => p.chatUsers || [])
+      : [];
+    return Array.from(new Set(userIds));
+  }, [infiniteQuery.data]);
   return {
     ...infiniteQuery,
     allConversations,
+    chatUsers,
   };
 };
 
