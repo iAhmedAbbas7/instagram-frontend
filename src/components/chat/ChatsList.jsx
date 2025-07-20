@@ -1,16 +1,34 @@
 // <= IMPORTS =>
-import { Loader2 } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { toast } from "sonner";
+import axiosClient from "@/utils/axiosClient";
 import { formatDistanceToNow } from "date-fns";
+import { useCallback, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import useConversations from "@/hooks/useConversations";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { setChatUser, setCurrentConversation } from "@/redux/chatSlice";
+import {
+  ArrowLeft,
+  BellOff,
+  Loader2,
+  MoreHorizontal,
+  Pin,
+  Trash2,
+} from "lucide-react";
 
 const ChatsList = ({ setPanelState }) => {
   // DISPATCH
   const dispatch = useDispatch();
+  // QUERY CLIENT
+  const queryClient = useQueryClient();
+  // CHAT MENU STATE MANAGEMENT
+  const [showChatMenu, setShowChatMenu] = useState(false);
+  // SELECTED CHAT STATE MANAGEMENT
+  const [selectedChat, setSelectedChat] = useState([]);
+  // DELETE LOADING STATE
+  const [deleteLoading, setDeleteLoading] = useState(false);
   // CURRENT USER CREDENTIALS
   const { user } = useSelector((store) => store.auth);
   // GETTING ONLINE USERS LIST FROM CHAT SLICE
@@ -41,6 +59,33 @@ const ChatsList = ({ setPanelState }) => {
     },
     [hasNextPage, fetchNextPage, isFetchingNextPage]
   );
+  // DELETE CHAT HANDLER
+  const deleteChatHandler = async () => {
+    // DELETE LOADING STATE
+    setDeleteLoading(true);
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.delete(
+        `/message/conversation/${selectedChat._id}`
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // INVALIDING CONVERSATIONS CACHE TO TRIGGER NEW FETCH
+        queryClient.invalidateQueries(["conversations"]);
+        // HIDING MENU
+        setShowChatMenu(false);
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response.data.message || "Chat Deleted Successfully!");
+      }
+    } catch (error) {
+      console.error("Failed to Delete Chat!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(error?.response?.data?.message || "Failed to Delete Chat!");
+    } finally {
+      // LOADING STATE
+      setDeleteLoading(false);
+    }
+  };
   // AVATAR FALLBACK MANAGEMENT
   const chatNameInitials = currentConversation?.name
     ? getFullNameInitials(currentConversation?.name)
@@ -87,7 +132,7 @@ const ChatsList = ({ setPanelState }) => {
                     setPanelState("CHAT");
                   }}
                   ref={isLast ? lastRef : undefined}
-                  className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer"
+                  className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer relative group"
                 >
                   {/* AVATAR */}
                   <Avatar
@@ -144,6 +189,18 @@ const ChatsList = ({ setPanelState }) => {
                       </span>
                     </div>
                   )}
+                  {/* CHAT MENU TRIGGER */}
+                  <div
+                    title="Menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowChatMenu(true);
+                      setSelectedChat(chat);
+                    }}
+                    className="absolute right-3 opacity-0 group-hover:opacity-100"
+                  >
+                    <MoreHorizontal size={25} className="text-gray-500" />
+                  </div>
                 </div>
               </>
             );
@@ -172,6 +229,54 @@ const ChatsList = ({ setPanelState }) => {
             Get Started
           </span>
         </div>
+      )}
+      {/* CHAT MENU */}
+      {showChatMenu && (
+        <>
+          {/* CHAT MENU OVERLAY */}
+          <div className="absolute w-full h-full flex flex-col items-start justify-start rounded-xl bg-white z-[150]">
+            {/* MENU HEADER */}
+            <div className="w-full flex items-center gap-3 px-3 py-3.5 border-b-2 border-gray-200">
+              {/* BACK BUTTON */}
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  setSelectedChat([]);
+                  setShowChatMenu(false);
+                }}
+              >
+                <ArrowLeft size={25} className="hover:text-gray-500" />
+              </div>
+              {/* TEXT */}
+              <h6 className="text-[1.1rem] font-semibold">Chat Actions</h6>
+            </div>
+            {/* CHAT ACTIONS SECTION */}
+            <div className="w-full flex items-start justify-start flex-col p-2">
+              {/* DELETE CHAT */}
+              <div
+                className="w-full p-2 flex items-center justify-between rounded-md hover:bg-gray-100 cursor-pointer"
+                onClick={deleteChatHandler}
+              >
+                <span className="font-semibold">Delete Chat</span>
+                {deleteLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={22} />
+                )}
+              </div>
+              {/* MUTE CHAT */}
+              <div className="w-full p-2 flex items-center justify-between rounded-md hover:bg-gray-100 cursor-pointer">
+                <span className="font-semibold">Mute Chat</span>
+                <BellOff size={22} />
+              </div>
+              {/* PIN CHAT */}
+              <div className="w-full p-2 flex items-center justify-between rounded-md hover:bg-gray-100 cursor-pointer">
+                <span className="font-semibold">Pin Chat</span>
+                <Pin size={22} />
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </>
   );
