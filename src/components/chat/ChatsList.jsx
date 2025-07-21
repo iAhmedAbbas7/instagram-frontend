@@ -34,7 +34,7 @@ const ChatsList = ({ setPanelState }) => {
   // GETTING ONLINE USERS LIST FROM CHAT SLICE
   const { onlineUsers } = useSelector((store) => store.chat);
   // GETTING CURRENT CONVERSATION FROM CHAT SLICE
-  const { currentConversation } = useSelector((store) => store.auth);
+  const { currentConversation, chatUser } = useSelector((store) => store.auth);
   // USING USE CONVERSATIONS HOOK
   const {
     allConversations,
@@ -70,6 +70,18 @@ const ChatsList = ({ setPanelState }) => {
       );
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // GRABBING THE OTHER PARTICIPANT FROM SELECTED CHAT
+        const otherParticipant = selectedChat?.participants?.find(
+          (p) => p.userId._id !== user._id
+        )?.userId;
+        // DISPATCHING THE OTHER PARTICIPANT AS THE CHAT USER
+        if (otherParticipant) {
+          dispatch(setChatUser(otherParticipant));
+          // INVALIDING THE MESSAGES CACHE FOR THAT CONVERSATION
+          queryClient.removeQueries(["messages", chatUser?._id]);
+        }
+        // INVALIDING THE MESSAGES CACHE FOR THAT CONVERSATION
+        queryClient.removeQueries(["messages", selectedChat?._id]);
         // INVALIDING CONVERSATIONS CACHE TO TRIGGER NEW FETCH
         queryClient.invalidateQueries(["conversations"]);
         // HIDING MENU

@@ -414,6 +414,13 @@ const SocketListener = () => {
       // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
       queryClientRef.current.invalidateQueries(["conversations"]);
     });
+    // LISTENING FOR CHAT INITIATED SOCKET EVENT
+    socketRef.current.on("chatInitiated", () => {
+      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
+      queryClientRef.current.invalidateQueries(["conversations"], {
+        exact: true,
+      });
+    });
     // CLEANUP FUNCTION
     return () => {
       // CLOSING THE SOCKET CONNECTION

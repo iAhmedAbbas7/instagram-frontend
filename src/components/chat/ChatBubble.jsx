@@ -127,6 +127,12 @@ const ChatBubble = () => {
           queryClient.setQueryData(["messages", queryKey], (oldData) => {
             // IF NO PREVIOUS DATA RETURNING CURRENT DATA
             if (!oldData) return oldData;
+            // GETTING THE CURRENT PAGE 1 OF DATA
+            const previousData = oldData.pages[0];
+            // CHECKING IF THE MESSAGE IS ALREADY APPENDED
+            if (previousData?.messages[0]?._id === newMessage._id) {
+              return oldData;
+            }
             // SETTING NEW PAGES FOR MESSAGES
             const newPages = [...oldData.pages];
             // APPENDING NEW MESSAGE TO THE FIRST PAGE OF PAGES
@@ -137,10 +143,6 @@ const ChatBubble = () => {
             };
             return { ...oldData, pages: newPages };
           });
-        }
-        // IF CURRENT CONVERSATION NOT SET
-        if (!currentConversation) {
-          dispatch(setCurrentConversation(response.data.conversation));
         }
       }
     } catch (error) {
