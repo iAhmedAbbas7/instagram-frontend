@@ -220,7 +220,7 @@ const ChatBubble = () => {
           }}
           className={`${
             isChatPage ? "hidden" : "fixed"
-          } bottom-9 right-9 bg-white hover:bg-gray-100 shadow-[0_4px_15px_rgba(0,0,0,0.4)] px-5 py-3 cursor-pointer rounded-full min-w-[250px] z-[25]`}
+          } bottom-9 right-6 bg-white hover:bg-gray-100 shadow-[0_4px_15px_rgba(0,0,0,0.4)] px-5 py-3 cursor-pointer rounded-full min-w-[280px] z-[25]`}
         >
           {/* CHAT BUBBLE CONTENT WRAPPER */}
           <div className="w-f-full flex items-center justify-between">
@@ -236,7 +236,7 @@ const ChatBubble = () => {
         <div
           className={`${
             isChatPage ? "hidden" : "fixed"
-          } right-7 bottom-7 w-[350px] h-[85vh] bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] rounded-lg z-[25] flex flex-col items-start justify-start`}
+          } right-2 bottom-4 w-[400px] h-[95.5vh] bg-white shadow-[0_4px_15px_rgba(0,0,0,0.4)] rounded-lg z-[25] flex flex-col items-start justify-start`}
         >
           {/* MESSAGES PANEL STATE */}
           {panelState === "MESSAGES" && (
@@ -902,7 +902,7 @@ const ChatBubble = () => {
                     </div>
                   </div>
                   {/* ACTIONS */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {/* CHAT MENU */}
                     <div
                       title="Menu"
