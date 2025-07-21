@@ -1,5 +1,6 @@
 // <= IMPORTS =>
 import { toast } from "sonner";
+import ChatMenu from "./ChatMenu";
 import Messages from "./Messages";
 import store from "@/redux/store";
 import ChatsList from "./ChatsList";
@@ -28,6 +29,7 @@ import {
   Loader2,
   Maximize,
   MessageCircleMore,
+  MoreVertical,
   PlusSquare,
   Search,
   SearchX,
@@ -819,6 +821,12 @@ const ChatBubble = () => {
               </div>
             </>
           )}
+          {/* CHAT MENU STATE */}
+          {panelState === "MENU" && (
+            <>
+              <ChatMenu setPanelState={setPanelState} />
+            </>
+          )}
           {/* ACTIVE CHAT PANEL STATE */}
           {panelState === "CHAT" && (chatUser || chat) !== null && (
             <>
@@ -895,6 +903,18 @@ const ChatBubble = () => {
                   </div>
                   {/* ACTIONS */}
                   <div className="flex items-center gap-3">
+                    {/* CHAT MENU */}
+                    <div
+                      title="Menu"
+                      onClick={() => {
+                        setPanelState("MENU");
+                      }}
+                    >
+                      <MoreVertical
+                        size={20}
+                        className="cursor-pointer hover:text-gray-500"
+                      />
+                    </div>
                     {/* EXPAND */}
                     <div
                       title="Expand"
