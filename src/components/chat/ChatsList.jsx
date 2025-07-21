@@ -98,10 +98,6 @@ const ChatsList = ({ setPanelState }) => {
       setDeleteLoading(false);
     }
   };
-  // AVATAR FALLBACK MANAGEMENT
-  const chatNameInitials = currentConversation?.name
-    ? getFullNameInitials(currentConversation?.name)
-    : "";
   return (
     <>
       {/* IF LOADING */}
@@ -130,6 +126,10 @@ const ChatsList = ({ setPanelState }) => {
             // AVATAR FALLBACK MANAGEMENT
             const fullNameInitials = other?.fullName
               ? getFullNameInitials(other?.fullName)
+              : "";
+            // AVATAR FALLBACK MANAGEMENT
+            const chatNameInitials = currentConversation?.name
+              ? getFullNameInitials(currentConversation?.name)
               : "";
             return (
               <>
