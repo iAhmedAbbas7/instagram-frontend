@@ -62,8 +62,6 @@ const ChatBubble = () => {
   const groupAvatarRef = useRef();
   // SCROLL CONTAINER REF
   const scrollContainerRef = useRef();
-  // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
-  const { chatUsers } = useConversations();
   // GROUP NAME STATE MANAGEMENT
   const [groupName, setGroupName] = useState("");
   // GROUP AVATAR STATE MANAGEMENT
@@ -84,6 +82,8 @@ const ChatBubble = () => {
   const [panelState, setPanelState] = useState("MESSAGES");
   // SELECTED USERS STATE MANAGEMENT
   const [selectedUsers, setSelectedUsers] = useState([]);
+  // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
+  const { chatUsers, unreadConversationCount } = useConversations();
   // GETTING CHAT USER FROM CHAT SLICE
   const { chatUser } = useSelector((store) => store.chat);
   // GETTING CURRENT USER & SUGGESTED USERS FROM AUTH SLICE
@@ -257,8 +257,17 @@ const ChatBubble = () => {
               </div>
               {/* HEADER */}
               <div className="w-full px-3 py-3.5 flex items-center justify-between border-b-2 border-gray-200">
-                {/* TEXT */}
-                <h5 className="text-[1.1rem] font-semibold">Messages</h5>
+                {/* TEXT & COUNT */}
+                <div className="flex items-center gap-2">
+                  <h5 className="text-[1.1rem] font-semibold">Messages</h5>
+                  {unreadConversationCount > 0 && (
+                    <div className="right-11 p-2.5 w-3 h-3 rounded-full bg-red-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {unreadConversationCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 {/* ACTIONS */}
                 <div className="flex items-center gap-3">
                   {/* EXPAND */}
@@ -791,7 +800,7 @@ const ChatBubble = () => {
                   </div>
                 </div>
                 {/* FOOTER */}
-                <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-t-2 border-gray-200">
+                <div className="w-full flex items-center justify-evenly gap-3 px-5 py-3.5 border-t-2 border-gray-200">
                   {/* DISCARD GROUP */}
                   <Button
                     type="button"

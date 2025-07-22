@@ -161,30 +161,69 @@ const SocketListener = () => {
       }
     });
     // LISTENING FOR NEW CHAT MESSAGE SOCKET EVENT
-    socketRef.current.on("newMessage", (populatedMessage) => {
+    socketRef.current.on("newMessage", async ({ populatedMessage, chatId }) => {
       // MESSAGE SENDER
       const messageSender = populatedMessage?.senderId?._id;
-      // DISPATCHING THE NEW MESSAGE IN THE MESSAGES ONLY WHEN THE USER IS CURRENTLY IN CHAT
+      // DISPATCHING THE NEW MESSAGE IN THE MESSAGES
+      queryClientRef.current.setQueryData(
+        [
+          "messages",
+          chatRef.current?._id ||
+            chatId ||
+            chatUserRef.current?._id ||
+            messageSender,
+        ],
+        (old) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page, idx) =>
+            idx === 0
+              ? {
+                  ...page,
+                  messages: [populatedMessage, ...page.messages],
+                }
+              : page
+          );
+          return { ...old, pages: newPages };
+        }
+      );
+      // UPDATING THE LAST READ COUNT ON INCOMING MESSAGE
       if (
-        isOnMessagesPageRef.current ||
-        chatUserRef.current ||
-        chatRef.current
+        messageSender !== currentUserIdRef.current &&
+        String(chatRef.current?._id) === String(chatId)
       ) {
-        queryClientRef.current.setQueryData(
-          ["messages", chatRef.current?._id || chatUserRef.current?._id],
-          (old) => {
+        try {
+          // MAKING REQUEST
+          await axiosClient.get(`/message/markRead/${chatId}`);
+          // CLEARING THE UNREAD BADGE FOR THE CONVERSATION
+          queryClientRef.current.setQueryData(["conversations"], (old) => {
             if (!old) return old;
-            const newPages = old.pages.map((page, idx) =>
-              idx === 0
-                ? {
-                    ...page,
-                    messages: [populatedMessage, ...page.messages],
-                  }
-                : page
-            );
+            const newPages = old.pages.map((page) => ({
+              ...page,
+              conversations: page.conversations.map((c) =>
+                c._id === chatId ? { ...c, unreadMessages: 0 } : c
+              ),
+            }));
             return { ...old, pages: newPages };
-          }
-        );
+          });
+        } catch (error) {
+          // LOGGING ERROR MESSAGE
+          console.error("Error marking Chat Read!", error);
+        }
+      }
+      // UPDATING THE UNREAD COUNT FOR THE CONVERSATION
+      if (!chatRef.current?._id || chatRef.current?._id !== chatId) {
+        queryClientRef.current.setQueryData(["conversations"], (old) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page) => ({
+            ...page,
+            conversations: page.conversations.map((c) =>
+              c._id === chatId
+                ? { ...c, unreadMessages: (c.unreadMessages || 0) + 1 }
+                : c
+            ),
+          }));
+          return { ...old, pages: newPages };
+        });
       }
       // EMITTING TOAST NOTIFICATION IF USER IS NOT ON THE CHAT PAGE
       if (

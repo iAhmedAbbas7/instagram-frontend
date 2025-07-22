@@ -144,7 +144,9 @@ const ChatsList = ({ setPanelState }) => {
                     setPanelState("CHAT");
                   }}
                   ref={isLast ? lastRef : undefined}
-                  className="w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer relative group"
+                  className={`w-full flex items-center gap-3 hover:bg-gray-100 p-3 cursor-pointer relative group ${
+                    chat?.unreadMessages > 0 ? "bg-gray-100" : "bg-none"
+                  }`}
                 >
                   {/* AVATAR */}
                   <Avatar
@@ -213,6 +215,13 @@ const ChatsList = ({ setPanelState }) => {
                   >
                     <MoreHorizontal size={25} className="text-gray-500" />
                   </div>
+                  {/* UNREAD MESSAGES BADGE */}
+                  {chat?.unreadMessages > 0 && (
+                    <div
+                      title={`Unread Messages (${chat?.unreadMessages})`}
+                      className="absolute right-11 p- w-3 h-3 rounded-full bg-sky-500 flex items-center justify-center"
+                    ></div>
+                  )}
                 </div>
               </>
             );

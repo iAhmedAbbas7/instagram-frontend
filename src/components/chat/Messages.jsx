@@ -2,7 +2,9 @@
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
+import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useRef } from "react";
 import useInfiniteMessages from "@/hooks/useInfiniteMessages";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
@@ -29,6 +31,8 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const topMessageRef = useRef();
   // INITIAL SCROLL TRACKING REF ON CHAT OPEN
   const didInitialScroll = useRef(false);
+  // QUERY CLIENT INSTANCE
+  const queryClient = useQueryClient();
   // CURRENT USER CREDENTIALS FROM AUTH SLICE
   const { user } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
@@ -152,6 +156,40 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     // SETTING PREVIOUS MESSAGES REF FOR NEXT TIME
     previousMessages.current = lastMessageId;
   }, [allMessages, scrollContainerRef]);
+  // MARKING THE CONVERSATION AS READ AFTER FETCHING MESSAGES
+  useEffect(() => {
+    // IF LOADING OR NO CONVERSATION YET
+    if (
+      initialLoading ||
+      !currentConversation?._id ||
+      currentConversation?.unreadMessages === 0
+    )
+      return;
+    // MARKING ROOM READ
+    const markChatRead = async () => {
+      // MAKING REQUEST
+      try {
+        await axiosClient.get(`/message/markRead/${currentConversation?._id}`);
+        // CLEARING THE UNREAD BADGE FOR THE CONVERSATION
+        queryClient.setQueryData(["conversations"], (old) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page) => ({
+            ...page,
+            conversations: page.conversations.map((c) =>
+              c._id === currentConversation?._id
+                ? { ...c, unreadMessages: 0 }
+                : c
+            ),
+          }));
+          return { ...old, pages: newPages };
+        });
+      } catch (error) {
+        // LOGGING ERROR TO CONSOLE
+        console.error("Error marking Chat Read!", error);
+      }
+    };
+    markChatRead();
+  }, [initialLoading, queryClient, currentConversation]);
   // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
   const fullNameInitialsChatUser = chatUser?.fullName
     ? getFullNameInitials(chatUser?.fullName)
@@ -234,24 +272,29 @@ const Messages = React.memo(({ scrollContainerRef }) => {
           )}
         </div>
         {/* MESSAGES SECTION */}
-        <section className={`w-full flex flex-col gap-1`}>
-          {allMessages?.map((msg) => {
+        <section className={`w-full flex flex-col`}>
+          {allMessages?.map((msg, idx) => {
+            // CURRENT USER
+            const isMe = msg?.senderId?._id === user?._id;
+            // LATEST MESSAGE
+            const lastMessage = allMessages[idx - 1];
+            // CHECKING THE SENDER OF THE NEW MESSAGE
+            const isNewGroup =
+              !lastMessage || lastMessage.senderId._id !== msg?.senderId?._id;
+            // CALCULATING THE GAP
+            const marginTop = isNewGroup ? "mt-2" : "mt-1";
             return (
               <div
                 className={`flex ${
-                  msg?.senderId?._id === user?._id
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
+                  isMe ? "justify-end" : "justify-start"
+                } ${marginTop}`}
                 key={msg._id}
               >
                 {/* MESSAGE TEXT */}
                 <div
                   className={`${
-                    msg?.senderId?._id === user?._id
-                      ? "text-white bg-sky-400"
-                      : "text-black bg-gray-200"
-                  } px-3 py-1.5 rounded-2xl text-[1rem] max-w-[70%]`}
+                    isMe ? "text-white bg-sky-400" : "text-black bg-gray-200"
+                  } px-3 py-1.5 rounded-2xl text-[0.9rem] max-w-[70%] break-words whitespace-pre-line leading-snug`}
                 >
                   {msg.message}
                 </div>
