@@ -11,16 +11,14 @@ import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const Messages = React.memo(({ scrollContainerRef }) => {
-  // USING USE INFINITE MESSAGES HOOK
-  const {
-    allMessages,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    isLoading: initialLoading,
-  } = useInfiniteMessages();
   // NAVIGATION
   const navigate = useNavigate();
+  // REFS FOR EACH INDIVIDUAL MESSAGE
+  const messageRefs = useRef([]);
+  // CLEANING UP REFS ON EACH RENDER
+  messageRefs.current = [];
+  // JUMP TO UNREAD SCROLL FLAG
+  const didJumpToUnread = useRef(false);
   // BOTTOM POSITION TRACKING REF
   const isAtBottomRef = useRef(true);
   // SNAPSHOT FOR PREVIOUS SCROLL HEIGHT
@@ -37,6 +35,14 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const { user } = useSelector((store) => store.auth);
   // GETTING CHAT USER FROM CHAT SLICE
   const { chatUser, currentConversation } = useSelector((store) => store.chat);
+  // USING USE INFINITE MESSAGES HOOK
+  const {
+    allMessages,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    isLoading: initialLoading,
+  } = useInfiniteMessages();
   // INTERSECTION OBSERVER HANDLER TO FETCH MESSAGES ON SCROLL
   const handleIntersect = useCallback(
     ([entry]) => {
@@ -64,6 +70,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       isFetchingNextPage,
     ]
   );
+  // RESETTING THE DID JUMP TO UNREAD FLAG
+  useEffect(() => {
+    didJumpToUnread.current = false;
+  }, [currentConversation?._id]);
   // TRACKING WHETHER USER IS AT THE BOTTOM OF THE CONTAINER
   useEffect(() => {
     // CONTAINER REFERENCE
@@ -170,16 +180,24 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       // MAKING REQUEST
       try {
         await axiosClient.get(`/message/markRead/${currentConversation?._id}`);
-        // CLEARING THE UNREAD BADGE FOR THE CONVERSATION
+        // CLEARING THE UNREAD BADGE & UPDATING LAST READ FOR THE CONVERSATION
         queryClient.setQueryData(["conversations"], (old) => {
           if (!old) return old;
           const newPages = old.pages.map((page) => ({
             ...page,
-            conversations: page.conversations.map((c) =>
-              c._id === currentConversation?._id
-                ? { ...c, unreadMessages: 0 }
-                : c
-            ),
+            conversations: page.conversations.map((c) => {
+              if (c._id !== currentConversation?._id) return c;
+              const updatedParticipants = c.participants.map((p) =>
+                p.userId._id === user?._id
+                  ? { ...p, lastRead: new Date().toISOString() }
+                  : p
+              );
+              return {
+                ...c,
+                unreadMessages: 0,
+                participants: updatedParticipants,
+              };
+            }),
           }));
           return { ...old, pages: newPages };
         });
@@ -189,7 +207,54 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       }
     };
     markChatRead();
-  }, [initialLoading, queryClient, currentConversation]);
+  }, [initialLoading, queryClient, currentConversation, user?._id]);
+  // MAKING TO SCROLL POSITIONED AT FIRST UNREAD MESSAGE ON LOAD
+  useEffect(() => {
+    // IF INITIAL LOADING
+    if (
+      initialLoading ||
+      !currentConversation ||
+      didJumpToUnread.current ||
+      currentConversation?.unreadMessages === 0
+    )
+      return;
+    // FINDING THE CURRENT USER PARTICIPANT RECORD
+    const userConversationPart = currentConversation?.participants?.find(
+      (p) => p.userId._id === user?._id
+    );
+    // EXTRACTING THE LAST READ
+    const lastRead = userConversationPart?.lastRead;
+    // IF NO LAST READ SET YET
+    if (!lastRead) {
+      // JUMP TO UNREAD SCROLL FLAG
+      didJumpToUnread.current = true;
+      return;
+    }
+    // FINDING THE FIRST AFTER LAST READ WITH UNREAD DATE
+    const messageIndex = allMessages.findIndex(
+      (msg) => new Date(msg.createdAt) > new Date(lastRead)
+    );
+    // APPLYING THE SCROLL ONLY WHEN UNREAD AVAILABLE
+    if (messageIndex >= 0) {
+      // SETTING NODE ON THE THAT REF
+      const node = messageRefs.current[messageIndex];
+      // SETTING SCROLL
+      node?.scrollIntoView({ block: "start" });
+    } else {
+      scrollContainerRef.current?.scrollTo(
+        0,
+        scrollContainerRef.current.scrollHeight
+      );
+    }
+    // JUMP TO UNREAD SCROLL FLAG
+    didJumpToUnread.current = true;
+  }, [
+    user?._id,
+    allMessages,
+    initialLoading,
+    currentConversation,
+    scrollContainerRef,
+  ]);
   // AVATAR FALLBACK MANAGEMENT FOR CHAT USER
   const fullNameInitialsChatUser = chatUser?.fullName
     ? getFullNameInitials(chatUser?.fullName)
@@ -283,8 +348,13 @@ const Messages = React.memo(({ scrollContainerRef }) => {
               !lastMessage || lastMessage.senderId._id !== msg?.senderId?._id;
             // CALCULATING THE GAP
             const marginTop = isNewGroup ? "mt-2" : "mt-1";
+            // REF FOR EACH INDIVIDUAL MESSAGE
+            const refForThis = (el) => {
+              messageRefs.current[idx] = el;
+            };
             return (
               <div
+                ref={refForThis}
                 className={`flex ${
                   isMe ? "justify-end" : "justify-start"
                 } ${marginTop}`}

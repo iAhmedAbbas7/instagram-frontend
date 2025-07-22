@@ -199,9 +199,19 @@ const SocketListener = () => {
             if (!old) return old;
             const newPages = old.pages.map((page) => ({
               ...page,
-              conversations: page.conversations.map((c) =>
-                c._id === chatId ? { ...c, unreadMessages: 0 } : c
-              ),
+              conversations: page.conversations.map((c) => {
+                if (c._id !== chatId) return c;
+                const updatedParticipants = c.participants.map((p) =>
+                  p.userId._id === currentUserIdRef.current
+                    ? { ...p, lastRead: new Date().toISOString() }
+                    : p
+                );
+                return {
+                  ...c,
+                  unreadMessages: 0,
+                  participants: updatedParticipants,
+                };
+              }),
             }));
             return { ...old, pages: newPages };
           });

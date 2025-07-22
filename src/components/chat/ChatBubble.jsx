@@ -121,7 +121,7 @@ const ChatBubble = () => {
         const conversationID = currentConversation?._id;
         // SETTING QUERY KEY FOR SETTING QUERY DATA
         const queryKey = conversationID || chatUserID;
-        // IF QUERY KEY EXISTS
+        // IF QUERY KEY EXISTS, APPENDING MESSAGE TO HE CHAT
         if (queryKey) {
           // GETTING NEWLY CREATED MESSAGE FROM RESPONSE
           const newMessage = response.data.populatedMessage;
@@ -145,6 +145,37 @@ const ChatBubble = () => {
             };
             return { ...oldData, pages: newPages };
           });
+        }
+        // UPDATING THE SENDER'S LAST READ TO KEEP UI IN SYNC
+        if (conversationID) {
+          // CLEARING THE UNREAD BADGE & UPDATING LAST READ FOR THE CONVERSATION
+          queryClient.setQueryData(["conversations"], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                conversations: page.conversations.map((c) =>
+                  c._id === conversationID
+                    ? {
+                        ...c,
+                        participants: c.participants.map((p) =>
+                          p.userId._id === user?._id
+                            ? { ...p, lastRead: new Date().toISOString() }
+                            : p
+                        ),
+                      }
+                    : c
+                ),
+              })),
+            };
+          });
+        }
+        // UPDATING THE LAST READ ON THE SERVER TO UPDATE LAST READ
+        if (conversationID) {
+          axiosClient
+            .get(`/message/markRead/${conversationID}`)
+            .catch((error) => console.log(error));
         }
       }
     } catch (error) {
