@@ -5,10 +5,10 @@ import { useSelector } from "react-redux";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, useEffect, useRef } from "react";
 import useInfiniteMessages from "@/hooks/useInfiniteMessages";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const Messages = React.memo(({ scrollContainerRef }) => {
   // NAVIGATION
@@ -31,6 +31,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const queryClient = useQueryClient();
   // CURRENT USER CREDENTIALS FROM AUTH SLICE
   const { user } = useSelector((store) => store.auth);
+  // FIRST UNREAD MESSAGE INDEX STATE
+  const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
+  // FIRST UNREAD MESSAGE REF
+  const firstUnreadIdxRef = useRef(firstUnreadIdx);
   // REFERENCE MESSAGE REF
   const referenceMessage = useRef({ id: null, topOffset: 0, index: 0 });
   // GETTING CHAT USER FROM CHAT SLICE
@@ -84,12 +88,69 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       isFetchingNextPage,
     ]
   );
+  // PREVIOUS MESSAGES COUNT REF
+  const previousMessagesCount = useRef(allMessages.length);
+  // SETTING THE VAlUE OF FIRST UNREAD IDX REF
+  useEffect(() => {
+    firstUnreadIdxRef.current = firstUnreadIdx;
+  }, [firstUnreadIdx]);
+  // BUMPING UNREAD ON MESSAGE PREPENDING
+  useEffect(() => {
+    // OLD MESSAGES LENGTH
+    const oldMessagesLength = previousMessagesCount.current;
+    const newMessagesLength = allMessages.length;
+    // AVOIDING MESSAGE PREPENDING TO THE UNREAD DIVIDER LINE
+    if (
+      didJumpToUnread.current &&
+      oldMessagesLength > 0 &&
+      newMessagesLength > oldMessagesLength
+    ) {
+      // BUMPING THE UNREAD INDEX ON MESSAGE PREPEND
+      setFirstUnreadIdx((idx) =>
+        idx !== null ? idx + (newMessagesLength - oldMessagesLength) : null
+      );
+    }
+    // SETTING THE REF FOR NEXT MESSAGE PREPEND ACTION
+    previousMessagesCount.current = newMessagesLength;
+  }, [allMessages.length]);
   // RESETTING THE DID JUMP TO UNREAD FLAG
   useEffect(() => {
     didJumpToUnread.current = false;
   }, [currentConversation?._id]);
+  // EFFECT TO RENDER THE UNREAD LINE IN THE MESSAGES
+  useEffect(() => {
+    // CONDITIONS FOR EARLY RETURN
+    if (
+      !currentConversation ||
+      currentConversation.unreadMessages === 0 ||
+      allMessages.length === 0
+    ) {
+      return;
+    }
+    // IF WE HAVEN'T JUMPED TO UNREAD MESSAGE YET
+    if (!didJumpToUnread.current) {
+      // FINDING THE CURRENT USER PARTICIPANT RECORD
+      const userConversationPart = currentConversation?.participants?.find(
+        (p) => p.userId._id === user?._id
+      );
+      // EXTRACTING THE LAST READ
+      const lastRead = userConversationPart?.lastRead;
+      // IF WE HAVE LAST READ TIMESTAMP, COMPUTING THE UNREAD
+      if (lastRead) {
+        // FINDING THE FIRST AFTER LAST READ WITH UNREAD DATE
+        const messageIndex = allMessages.findIndex(
+          (msg) => new Date(msg.createdAt) > new Date(lastRead)
+        );
+        // SETTING THE INDEX OF THE FIRST UNREAD INDEX
+        setFirstUnreadIdx(messageIndex >= 0 ? messageIndex : null);
+      }
+      // SETTING THE JUMP FLAG
+      didJumpToUnread.current = true;
+    }
+  }, [allMessages, currentConversation, user?._id]);
   // TRACKING WHETHER USER IS AT THE BOTTOM OF THE CONTAINER
   useEffect(() => {
+    if (!didJumpToUnread.current) return;
     // CONTAINER REFERENCE
     const container = scrollContainerRef.current;
     // IF NO CONTAINER REFERENCE
@@ -100,11 +161,12 @@ const Messages = React.memo(({ scrollContainerRef }) => {
         container.scrollHeight - container.scrollTop - container.clientHeight <
         5;
       isAtBottomRef.current = isAtBottom;
+      if (isAtBottom && firstUnreadIdxRef.current !== null) {
+        setFirstUnreadIdx(null);
+      }
     };
     // ADDING EVENT LISTENER ON CONTAINER
     container.addEventListener("scroll", onScroll);
-    // STARTING ON SCROLL OBSERVER HANDLER
-    onScroll();
     // CLEANUP FUNCTION
     return () => container.removeEventListener("scroll", onScroll);
   }, [scrollContainerRef]);
@@ -371,22 +433,38 @@ const Messages = React.memo(({ scrollContainerRef }) => {
               messageRefs.current[idx] = el;
             };
             return (
-              <div
-                ref={refForThis}
-                className={`flex ${
-                  isMe ? "justify-end" : "justify-start"
-                } ${marginTop}`}
-                key={msg._id}
-              >
-                {/* MESSAGE TEXT */}
+              <React.Fragment key={msg._id}>
+                {/* UNREAD LINE SEPARATOR */}
+                {idx === firstUnreadIdx && (
+                  <div className="w-full bg-gray-200 h-0.5 rounded-full flex items-center justify-center relative my-6 text-center">
+                    <span className="rounded-full absolute text-xs text-gray-500 bg-white px-6 py-2 w-fit">
+                      <span className="font-semibold">
+                        {allMessages.length - idx}
+                      </span>{" "}
+                      unread{" "}
+                      {`${
+                        allMessages.length - idx === 1 ? "message" : "messages"
+                      }`}
+                    </span>
+                  </div>
+                )}
+                {/* MESSAGE BUBBLE */}
                 <div
-                  className={`${
-                    isMe ? "text-white bg-sky-400" : "text-black bg-gray-200"
-                  } px-3 py-1.5 rounded-2xl text-[0.9rem] max-w-[70%] break-words whitespace-pre-line leading-snug`}
+                  ref={refForThis}
+                  className={`flex ${
+                    isMe ? "justify-end" : "justify-start"
+                  } ${marginTop}`}
                 >
-                  {msg.message}
+                  {/* MESSAGE TEXT */}
+                  <div
+                    className={`${
+                      isMe ? "text-white bg-sky-400" : "text-black bg-gray-200"
+                    } px-3 py-1.5 rounded-2xl text-[0.9rem] max-w-[70%] break-words whitespace-pre-line leading-snug`}
+                  >
+                    {msg.message}
+                  </div>
                 </div>
-              </div>
+              </React.Fragment>
             );
           })}
         </section>
