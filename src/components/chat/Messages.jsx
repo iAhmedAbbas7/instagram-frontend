@@ -21,18 +21,18 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const didJumpToUnread = useRef(false);
   // BOTTOM POSITION TRACKING REF
   const isAtBottomRef = useRef(true);
-  // SNAPSHOT FOR PREVIOUS SCROLL HEIGHT
-  const previousHeight = useRef(0);
-  // SNAPSHOT FOR PREVIOUS MESSAGES COUNT
-  const previousMessages = useRef(0);
   // INTERSECTION OBSERVER AT THE TOP
   const topMessageRef = useRef();
+  // LAST MESSAGE IF REF
+  const lastMessageIdRef = useRef(null);
   // INITIAL SCROLL TRACKING REF ON CHAT OPEN
   const didInitialScroll = useRef(false);
   // QUERY CLIENT INSTANCE
   const queryClient = useQueryClient();
   // CURRENT USER CREDENTIALS FROM AUTH SLICE
   const { user } = useSelector((store) => store.auth);
+  // REFERENCE MESSAGE REF
+  const referenceMessage = useRef({ id: null, topOffset: 0, index: 0 });
   // GETTING CHAT USER FROM CHAT SLICE
   const { chatUser, currentConversation } = useSelector((store) => store.chat);
   // USING USE INFINITE MESSAGES HOOK
@@ -57,15 +57,29 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       ) {
         return;
       }
-      previousHeight.current = container.scrollHeight;
-      previousMessages.current = allMessages.length;
+      // FINDING FIRST VISIBLE MESSAGE IN VIEWPORT
+      const firstVisibleIndex = messageRefs.current.findIndex((ref) => {
+        if (!ref) return false;
+        const rect = ref.getBoundingClientRect();
+        return rect.top >= container.getBoundingClientRect().top;
+      });
+      if (firstVisibleIndex >= 0) {
+        const refMessage = messageRefs.current[firstVisibleIndex];
+        referenceMessage.current = {
+          id: allMessages[firstVisibleIndex]._id,
+          topOffset:
+            refMessage.getBoundingClientRect().top -
+            container.getBoundingClientRect().top,
+          index: firstVisibleIndex,
+        };
+      }
       fetchNextPage();
     },
     [
+      allMessages,
       hasNextPage,
       fetchNextPage,
       initialLoading,
-      allMessages.length,
       scrollContainerRef,
       isFetchingNextPage,
     ]
@@ -133,17 +147,21 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     const container = scrollContainerRef.current;
     // IF NO CONTAINER REFERENCE
     if (!container) return;
-    // NEW MESSAGES COUNT
-    const newMessagesCount = allMessages.length;
-    // OLD MESSAGES COUNT
-    const oldMessagesCount = previousMessages.current;
-    //
-    if (oldMessagesCount > 0 && newMessagesCount > oldMessagesCount) {
-      const heightDifference = container.scrollHeight - previousHeight.current;
-      container.scrollTop = heightDifference;
+    if (referenceMessage.current.id) {
+      const newIndex = allMessages.findIndex(
+        (msg) => msg._id === referenceMessage.current.id
+      );
+      if (newIndex >= 0 && messageRefs.current[newIndex]) {
+        const refMessage = messageRefs.current[newIndex];
+        const containerRect = container.getBoundingClientRect();
+        const currentOffset =
+          refMessage.getBoundingClientRect().top - containerRect.top;
+        const offsetDifference =
+          currentOffset - referenceMessage.current.topOffset;
+        container.scrollTop += offsetDifference;
+      }
     }
-    previousHeight.current = 0;
-    previousMessages.current = 0;
+    referenceMessage.current = { id: null, topOffset: 0, index: 0 };
   }, [allMessages, isFetchingNextPage, scrollContainerRef]);
   // AUTO SCROLLING TO THE BOTTOM IS NEAR THE BOTTOM OF CONTAINER
   useEffect(() => {
@@ -158,13 +176,13 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       didInitialScroll.current &&
       isAtBottomRef.current &&
       lastMessageId &&
-      lastMessageId !== previousMessages.current
+      lastMessageId !== lastMessageIdRef.current
     ) {
       // SCROLLING TO BOTTOM
       container.scrollTop = container.scrollHeight;
     }
     // SETTING PREVIOUS MESSAGES REF FOR NEXT TIME
-    previousMessages.current = lastMessageId;
+    lastMessageIdRef.current = lastMessageId;
   }, [allMessages, scrollContainerRef]);
   // MARKING THE CONVERSATION AS READ AFTER FETCHING MESSAGES
   useEffect(() => {
