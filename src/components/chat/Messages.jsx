@@ -6,6 +6,7 @@ import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import useInfiniteMessages from "@/hooks/useInfiniteMessages";
+import { processMessagesWithDividers } from "@/utils/dateUtils";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -47,6 +48,8 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     isFetchingNextPage,
     isLoading: initialLoading,
   } = useInfiniteMessages();
+  // PROCESSING MESSAGES WITH DAY DIVIDERS USING UTILITY FUNCTION
+  const processedItems = processMessagesWithDividers(allMessages);
   // INTERSECTION OBSERVER HANDLER TO FETCH MESSAGES ON SCROLL
   const handleIntersect = useCallback(
     ([entry]) => {
@@ -170,6 +173,24 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     // CLEANUP FUNCTION
     return () => container.removeEventListener("scroll", onScroll);
   }, [scrollContainerRef]);
+  // AUTOMATICALLY HIDING THE UNREAD BAR WHEN THERE IS NO SCROLL
+  useEffect(() => {
+    // CONTAINER
+    const container = scrollContainerRef.current;
+    // IF CONTAINER HAS NO SCROLL YET
+    if (
+      firstUnreadIdx !== null &&
+      container &&
+      container.scrollHeight <= container.clientHeight
+    ) {
+      // TIMEOUT FUNCTION TO HIDE AFTER 5 SECONDS
+      const timer = setTimeout(() => {
+        setFirstUnreadIdx(null);
+      }, 5000);
+      // CLEARING TIMEOUT
+      return () => clearTimeout(timer);
+    }
+  }, [firstUnreadIdx, scrollContainerRef]);
   // INITIAL SCROLL TO BOTTOM OF THE CONTAINER ON CHAT OPENED
   useEffect(() => {
     // CONTAINER REFERENCE
@@ -209,10 +230,13 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     const container = scrollContainerRef.current;
     // IF NO CONTAINER REFERENCE
     if (!container) return;
+    // IF THE REFERENCE MESSAGE EXISTS
     if (referenceMessage.current.id) {
+      // FINDING THE INDEX OF REFERENCE MESSAGE IN NEW MESSAGES LIST
       const newIndex = allMessages.findIndex(
         (msg) => msg._id === referenceMessage.current.id
       );
+      // POSITIONING THE REFERENCE MESSAGE IN THE VIEWPORT TO ITS ORIGINAL POSITION
       if (newIndex >= 0 && messageRefs.current[newIndex]) {
         const refMessage = messageRefs.current[newIndex];
         const containerRect = container.getBoundingClientRect();
@@ -223,6 +247,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
         container.scrollTop += offsetDifference;
       }
     }
+    // RESETTING REFERENCE MESSAGE
     referenceMessage.current = { id: null, topOffset: 0, index: 0 };
   }, [allMessages, isFetchingNextPage, scrollContainerRef]);
   // AUTO SCROLLING TO THE BOTTOM IS NEAR THE BOTTOM OF CONTAINER
@@ -351,7 +376,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     <>
       {/* CHAT USER INFO SECTION */}
       {!isFetchingNextPage && (
-        <div className="w-full py-4 flex flex-col items-center justify-center">
+        <div className="w-full pt-4 flex flex-col items-center justify-center">
           {/* AVATAR */}
           <Avatar
             className={`w-20 h-20 cursor-pointer ${
@@ -418,32 +443,55 @@ const Messages = React.memo(({ scrollContainerRef }) => {
         </div>
         {/* MESSAGES SECTION */}
         <section className={`w-full flex flex-col`}>
-          {allMessages?.map((msg, idx) => {
+          {processedItems?.map((item, idx) => {
+            // RENDERING DAY DIVIDER
+            if (item.type === "DIVIDER") {
+              return (
+                <div
+                  key={item.id}
+                  className="w-full  flex items-center justify-center my-4"
+                >
+                  <div className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-500 font-bold">
+                    <span>{item.label}</span>
+                  </div>
+                </div>
+              );
+            }
+            // FINDING THE ORIGINAL MESSAGE INDEX IF IT IS A MESSAGE
+            const originalMessageIndex = allMessages.findIndex(
+              (msg) => msg._id === item._id
+            );
             // CURRENT USER
-            const isMe = msg?.senderId?._id === user?._id;
-            // LATEST MESSAGE
-            const lastMessage = allMessages[idx - 1];
+            const isMe = item?.senderId?._id === user?._id;
+            // GETTING ACTUAL PREVIOUS MESSAGE & NOT DIVIDER
+            const prevMessageItem = processedItems
+              .slice(0, idx)
+              .reverse()
+              .find((prevItem) => prevItem.type === "MESSAGE");
             // CHECKING THE SENDER OF THE NEW MESSAGE
             const isNewGroup =
-              !lastMessage || lastMessage.senderId._id !== msg?.senderId?._id;
+              !prevMessageItem ||
+              prevMessageItem.senderId._id !== item?.senderId?._id;
             // CALCULATING THE GAP
             const marginTop = isNewGroup ? "mt-2" : "mt-1";
             // REF FOR EACH INDIVIDUAL MESSAGE
             const refForThis = (el) => {
-              messageRefs.current[idx] = el;
+              messageRefs.current[originalMessageIndex] = el;
             };
             return (
-              <React.Fragment key={msg._id}>
+              <React.Fragment key={item._id}>
                 {/* UNREAD LINE SEPARATOR */}
-                {idx === firstUnreadIdx && (
+                {originalMessageIndex === firstUnreadIdx && (
                   <div className="w-full bg-gray-200 h-0.5 rounded-full flex items-center justify-center relative my-6 text-center">
                     <span className="rounded-full absolute text-xs text-gray-500 bg-white px-6 py-2 w-fit">
                       <span className="font-semibold">
-                        {allMessages.length - idx}
+                        {allMessages.length - originalMessageIndex}
                       </span>{" "}
                       unread{" "}
                       {`${
-                        allMessages.length - idx === 1 ? "message" : "messages"
+                        allMessages.length - originalMessageIndex === 1
+                          ? "message"
+                          : "messages"
                       }`}
                     </span>
                   </div>
@@ -461,7 +509,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
                       isMe ? "text-white bg-sky-400" : "text-black bg-gray-200"
                     } px-3 py-1.5 rounded-2xl text-[0.9rem] max-w-[70%] break-words whitespace-pre-line leading-snug`}
                   >
-                    {msg.message}
+                    {item.message}
                   </div>
                 </div>
               </React.Fragment>
