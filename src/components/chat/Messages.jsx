@@ -153,7 +153,6 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   }, [allMessages, currentConversation, user?._id]);
   // TRACKING WHETHER USER IS AT THE BOTTOM OF THE CONTAINER
   useEffect(() => {
-    if (!didJumpToUnread.current) return;
     // CONTAINER REFERENCE
     const container = scrollContainerRef.current;
     // IF NO CONTAINER REFERENCE
