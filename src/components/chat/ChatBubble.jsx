@@ -1002,6 +1002,16 @@ const ChatBubble = () => {
                     id="messageText"
                     name="messageText"
                     onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        !e.shiftKey &&
+                        messageText.trim()
+                      ) {
+                        e.preventDefault();
+                        sendMessageHandler(chatUser?._id);
+                      }
+                    }}
                     type="text"
                     className="w-full border-gray-200 outline-none focus:outline-none border-2 rounded-full pl-4 pr-15 py-2 text-gray-500 placeholder:text-gray-500 text-sm placeholder:text-sm"
                     placeholder="Message..."
