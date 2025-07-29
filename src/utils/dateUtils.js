@@ -68,7 +68,7 @@ export const processMessagesWithDividers = (messages) => {
     // ADDING THE DIVIDER IF IT IS THE FIRST MESSAGE OR IN DIFFERENT DAY
     if (
       index === 0 ||
-      isDifferentDay(previousMessage.createdAt - message.createdAt)
+      isDifferentDay(previousMessage.createdAt, message.createdAt)
     ) {
       // PUSHING DIVIDER IN THE PROCESSED ITEMS
       processedItems.push({
