@@ -471,9 +471,9 @@ const ChatBubble = () => {
                       </div>
                       {/* IF NO SEARCH RESULTS */}
                       {hasFetched && !loading && searchResults.length === 0 && (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        <div className="px-3 w-full h-full flex flex-col items-center justify-center gap-2">
                           <SearchX size={50} className="text-sky-400" />
-                          <span className="text-sm text-gray-500">
+                          <span className="text-center text-sm text-gray-500">
                             No search results for{" "}
                             <span className="font-semibold">
                               &quot;{query}&quot;
