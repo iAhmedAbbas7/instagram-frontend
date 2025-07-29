@@ -25,9 +25,12 @@ const useInfiniteMessages = () => {
         .get(URL, { params: { limit: 15, cursor: pageParam } })
         .then((res) => res.data);
     },
-    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+    enabled: !!queryKey,
+    initialPageParam: null,
     staleTime: 1000 * 60 * 10,
     cacheTime: 1000 * 60 * 10,
+    placeholderData: (previousData) => previousData,
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
   });
   // FLATTENING PAGES INTO SINGLE ARRAY & REVERSING ORDER (OLDEST => NEWEST)
   const allMessages =
