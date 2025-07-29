@@ -12,18 +12,18 @@ const ChatButton = ({ selectedUsers, setPanelState }) => {
   const { allConversations } = useConversations();
   // CHAT CREATION HANDLER
   const handleChatCreation = async () => {
-    // DISPATCHING THE CHAT USER IN THE CHAT SLICE
-    dispatch(setChatUser(selectedUsers[0]));
     // CHECKING FOR EXISTING CONVERSATION IN THE CONVERSATIONS
     const existingConversation = allConversations.find(
       (c) =>
         c?.type === "ONE-TO-ONE" &&
-        c.participants.some((p) => p._id === selectedUsers[0]._id)
+        c.participants.some((p) => p.userId._id === selectedUsers[0]._id)
     );
     // IF THERE IS AN EXISTING CONVERSATION THEN DISPATCHING IT IN CHAT SLICE
     if (existingConversation) {
       dispatch(setCurrentConversation(existingConversation));
     }
+    // DISPATCHING THE CHAT USER IN THE CHAT SLICE
+    dispatch(setChatUser(selectedUsers[0]));
     // SETTING PANEL STATE TO CHAT
     setPanelState("CHAT");
   };

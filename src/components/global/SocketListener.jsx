@@ -459,15 +459,21 @@ const SocketListener = () => {
       }
     });
     // LISTENING FOR NEW CONVERSATION SOCKET EVENT
-    socketRef.current.on("newConversation", () => {
-      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
-      queryClientRef.current.invalidateQueries(["conversations"]);
-    });
-    // LISTENING FOR CHAT INITIATED SOCKET EVENT
-    socketRef.current.on("chatInitiated", () => {
-      // INVALIDATING THE CONVERSATIONS LIST TO FETCH THE LATEST CHATS
-      queryClientRef.current.invalidateQueries(["conversations"], {
-        exact: true,
+    socketRef.current.on("newConversation", ({ conversation }) => {
+      // ADDING THE NEW CONVERSATION TO THE RECEIVER'S CONVERSATIONS LIST
+      queryClientRef.current.setQueryData(["conversations"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, i) =>
+            i === 0
+              ? {
+                  ...page,
+                  conversations: [conversation, ...page.conversations],
+                }
+              : page
+          ),
+        };
       });
     });
     // CLEANUP FUNCTION

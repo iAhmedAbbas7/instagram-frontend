@@ -109,12 +109,12 @@ const ChatBubble = () => {
           },
         }
       );
+      // GETTING CHAT USER & CURRENT CONVERSATION FROM GLOBAL REDUX STORE
+      const { chatUser, currentConversation } = store.getState().chat;
       // IF RESPONSE SUCCESS
       if (response.data.success) {
         // CLEARING MESSAGE FIELD
         setMessageText("");
-        // GETTING CHAT USER & CURRENT CONVERSATION FROM GLOBAL REDUX STORE
-        const { chatUser, currentConversation } = store.getState().chat;
         // SETTING CHAT USER ID FROM CHAT USER
         const chatUserID = chatUser?._id;
         // SETTING CURRENT CONVERSATION ID FROM CURRENT CONVERSATION
@@ -176,6 +176,28 @@ const ChatBubble = () => {
           axiosClient
             .get(`/message/markRead/${conversationID}`)
             .catch((error) => console.log(error));
+        }
+        // IF NO CONVERSATION SET
+        if (!currentConversation) {
+          // MERGING THE RETURNED CONVERSATION IN THE CACHED CONVERSATIONS LIST
+          const conversation = response.data.conversation;
+          // SETTING QUERY DATA
+          queryClient.setQueryData(["conversations"], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page, i) =>
+                i === 0
+                  ? {
+                      ...page,
+                      conversations: [conversation, ...page.conversations],
+                    }
+                  : page
+              ),
+            };
+          });
+          // DISPATCHING THE CURRENT CONVERSATION IN THE LIST
+          dispatch(setCurrentConversation(conversation));
         }
       }
     } catch (error) {
