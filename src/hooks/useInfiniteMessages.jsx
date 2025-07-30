@@ -4,22 +4,18 @@ import axiosClient from "@/utils/axiosClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 const useInfiniteMessages = () => {
-  // GETTING CHAT USER & CURRENT CONVERSATION FROM CHAT SLICE
-  const { chatUser, currentConversation } = useSelector((store) => store.chat);
-  // SETTING CHAT USER ID BASED ON IF PRESENT
-  const chatUserID = chatUser?._id;
+  // GETTING CURRENT CONVERSATION FROM CHAT SLICE
+  const { currentConversation } = useSelector((store) => store.chat);
   // SETTING CONVERSATION ID BASED ON IF PRESENT
   const conversationID = currentConversation?._id;
   // SETTING QUERY KEY
-  const queryKey = conversationID || chatUserID;
+  const queryKey = conversationID;
   // USING INFINITE QUERY FROM REACT QUERY
   const infiniteQuery = useInfiniteQuery({
     queryKey: ["messages", queryKey],
     queryFn: async ({ pageParam = null }) => {
       // SETTING URL BASED ON WHICH ID IS PRESENT
-      const URL = conversationID
-        ? `/message/conversation/${conversationID}/messages`
-        : `/message/all/${chatUserID}`;
+      const URL = `/message/conversation/${conversationID}/messages`;
       // RETURNING RESPONSE
       return await axiosClient
         .get(URL, { params: { limit: 15, cursor: pageParam } })

@@ -110,17 +110,15 @@ const ChatBubble = () => {
         }
       );
       // GETTING CHAT USER & CURRENT CONVERSATION FROM GLOBAL REDUX STORE
-      const { chatUser, currentConversation } = store.getState().chat;
+      const { currentConversation } = store.getState().chat;
       // IF RESPONSE SUCCESS
       if (response.data.success) {
         // CLEARING MESSAGE FIELD
         setMessageText("");
-        // SETTING CHAT USER ID FROM CHAT USER
-        const chatUserID = chatUser?._id;
         // SETTING CURRENT CONVERSATION ID FROM CURRENT CONVERSATION
         const conversationID = currentConversation?._id;
         // SETTING QUERY KEY FOR SETTING QUERY DATA
-        const queryKey = conversationID || chatUserID;
+        const queryKey = conversationID;
         // IF QUERY KEY EXISTS, APPENDING MESSAGE TO HE CHAT
         if (queryKey) {
           // GETTING NEWLY CREATED MESSAGE FROM RESPONSE
@@ -190,7 +188,12 @@ const ChatBubble = () => {
                 i === 0
                   ? {
                       ...page,
-                      conversations: [conversation, ...page.conversations],
+                      conversations: [
+                        conversation,
+                        ...page.conversations.filter(
+                          (c) => c._id !== conversation._id
+                        ),
+                      ],
                     }
                   : page
               ),

@@ -142,7 +142,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
       if (lastRead) {
         // FINDING THE FIRST AFTER LAST READ WITH UNREAD DATE
         const messageIndex = allMessages.findIndex(
-          (msg) => msg.senderId._id !== user?._id && msg.seenAt === null
+          (msg) =>
+            msg.senderId._id !== user?._id &&
+            !msg.seenBy?.some((sb) => String(sb?.userId) === user?._id) &&
+            new Date(msg.createdAt) > new Date(lastRead)
         );
         // SETTING THE INDEX OF THE FIRST UNREAD INDEX
         setFirstUnreadIdx(messageIndex >= 0 ? messageIndex : null);
@@ -336,7 +339,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     }
     // FINDING THE FIRST AFTER LAST READ WITH UNREAD DATE
     const messageIndex = allMessages.findIndex(
-      (msg) => msg.senderId._id !== user?._id && msg.seenAt === null
+      (msg) =>
+        msg.senderId._id !== user?._id &&
+        !msg.seenBy?.some((sb) => String(sb?.userId) === user?._id) &&
+        new Date(msg.createdAt) > new Date(lastRead)
     );
     // APPLYING THE SCROLL ONLY WHEN UNREAD AVAILABLE
     if (messageIndex >= 0) {

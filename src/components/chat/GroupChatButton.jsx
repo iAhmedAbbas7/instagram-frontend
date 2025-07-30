@@ -2,9 +2,10 @@
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "../ui/button";
+import { useDispatch } from "react-redux";
 import axiosClient from "@/utils/axiosClient";
 import { Loader2, Users2 } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { setCurrentConversation } from "@/redux/chatSlice";
 
 const GroupChatButton = ({
@@ -15,6 +16,8 @@ const GroupChatButton = ({
 }) => {
   // DISPATCH
   const dispatch = useDispatch();
+  // QUERY CLIENT INSTANCE
+  const queryClient = useQueryClient();
   // LOADING STATE
   const [loading, setLoading] = useState(false);
   // SETTING GROUP PARTICIPANTS
@@ -49,10 +52,32 @@ const GroupChatButton = ({
       });
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // GETTING THE CONVERSATION FROM RESPONSE
+        const conversation = response.data.conversation;
         // TOASTING ERROR MESSAGE
         toast.success("Group Chat Created Successfully !");
         // DISPATCHING THE CONVERSATION AS CURRENT CONVERSATION
         dispatch(setCurrentConversation(response.data.conversation));
+        // ADDING THE CONVERSATION THE CACHED CONVERSATIONS LIST
+        queryClient.setQueryData(["conversations"], (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page, i) =>
+              i === 0
+                ? {
+                    ...page,
+                    conversations: [
+                      conversation,
+                      ...page.conversations.filter(
+                        (c) => c._id !== conversation._id
+                      ),
+                    ],
+                  }
+                : page
+            ),
+          };
+        });
         // SETTING THE PANEL STATE TO CHAT
         setPanelState("CHAT");
       }

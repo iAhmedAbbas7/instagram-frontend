@@ -27,7 +27,7 @@ const SocketListener = () => {
   // GETTING POSTS & SINGLE POST FROM POST SLICE
   const { posts, singlePost } = useSelector((store) => store.post);
   // GETTING CHAT USER & CURRENT CONVERSATION FROM THE CHAT SLICE
-  const { chatUser, currentConversation } = useSelector((store) => store.chat);
+  const { currentConversation } = useSelector((store) => store.chat);
   // CURRENT USER ,CURRENT USER & SUGGESTED USERS PROFILE CREDENTIALS
   const { user, userProfile, suggestedUsers } = useSelector(
     (store) => store.auth
@@ -46,8 +46,6 @@ const SocketListener = () => {
   const queryClient = useQueryClient();
   // POSTS REF
   const postsRef = useRef(posts);
-  // CHAT USER REF
-  const chatUserRef = useRef(chatUser);
   // SINGLE POST REF
   const singlePostRef = useRef(singlePost);
   // USER PROFILE REF
@@ -96,10 +94,6 @@ const SocketListener = () => {
   useEffect(() => {
     postsRef.current = posts;
   }, [posts]);
-  // SYNCING THE LATEST CHAT USER IN THE REF
-  useEffect(() => {
-    chatUserRef.current = chatUser;
-  }, [chatUser]);
   // SYNCING THE LATEST SINGLE POST IN THE REF
   useEffect(() => {
     singlePostRef.current = singlePost;
@@ -166,13 +160,7 @@ const SocketListener = () => {
       const messageSender = populatedMessage?.senderId?._id;
       // DISPATCHING THE NEW MESSAGE IN THE MESSAGES
       queryClientRef.current.setQueryData(
-        [
-          "messages",
-          chatRef.current?._id ||
-            chatId ||
-            chatUserRef.current?._id ||
-            messageSender,
-        ],
+        ["messages", chatRef.current?._id || chatId],
         (old) => {
           if (!old) return old;
           const newPages = old.pages.map((page, idx) =>
@@ -239,7 +227,6 @@ const SocketListener = () => {
       if (
         !isOnMessagesPageRef.current &&
         currentUserIdRef.current !== messageSender &&
-        !chatUserRef.current &&
         !chatRef.current
       ) {
         toast(`New Message from ${populatedMessage?.senderId?.fullName}`, {
@@ -469,7 +456,35 @@ const SocketListener = () => {
             i === 0
               ? {
                   ...page,
-                  conversations: [conversation, ...page.conversations],
+                  conversations: [
+                    conversation,
+                    ...page.conversations.filter(
+                      (c) => c._id !== conversation._id
+                    ),
+                  ],
+                }
+              : page
+          ),
+        };
+      });
+    });
+    // LISTENING FOR NEW CONVERSATION SOCKET EVENT
+    socketRef.current.on("groupConversation", ({ conversation }) => {
+      // ADDING THE NEW GROUP CONVERSATION TO THE RECEIVER'S CONVERSATIONS LIST
+      queryClientRef.current.setQueryData(["conversations"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page, i) =>
+            i === 0
+              ? {
+                  ...page,
+                  conversations: [
+                    conversation,
+                    ...page.conversations.filter(
+                      (c) => c._id !== conversation._id
+                    ),
+                  ],
                 }
               : page
           ),
