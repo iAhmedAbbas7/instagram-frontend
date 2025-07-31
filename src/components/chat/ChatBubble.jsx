@@ -7,6 +7,7 @@ import ChatsList from "./ChatsList";
 import { Button } from "../ui/button";
 import ChatButton from "./ChatButton";
 import axiosClient from "@/utils/axiosClient";
+import ScrollToBottom from "./ScrollToBottom";
 import GroupChatButton from "./GroupChatButton";
 import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
@@ -896,7 +897,7 @@ const ChatBubble = () => {
           {panelState === "CHAT" && (chatUser || chat) !== null && (
             <>
               {/* CHAT MAIN CONTAINER */}
-              <div className="w-full h-full flex flex-col items-start justify-between">
+              <div className="w-full h-full flex flex-col items-start justify-between relative">
                 {/* HEADER */}
                 <div className="w-full px-3 py-3.5 flex items-center justify-between border-b-2 border-gray-200">
                   {/* BACK & AVATAR SECTION */}
@@ -1020,6 +1021,8 @@ const ChatBubble = () => {
                   {/* MESSAGES */}
                   <Messages scrollContainerRef={scrollContainerRef} />
                 </div>
+                {/* SCROLL TO BOTTOM */}
+                <ScrollToBottom scrollContainerRef={scrollContainerRef} />
                 {/* MESSAGE INPUT */}
                 <div className="w-full p-3 bg-white relative flex items-center justify-center rounded-b-lg">
                   <input
