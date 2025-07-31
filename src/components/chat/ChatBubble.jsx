@@ -6,6 +6,7 @@ import store from "@/redux/store";
 import ChatsList from "./ChatsList";
 import { Button } from "../ui/button";
 import ChatButton from "./ChatButton";
+import MessageBadge from "./MessageBadge";
 import axiosClient from "@/utils/axiosClient";
 import ScrollToBottom from "./ScrollToBottom";
 import GroupChatButton from "./GroupChatButton";
@@ -83,6 +84,8 @@ const ChatBubble = () => {
   const [panelState, setPanelState] = useState("MESSAGES");
   // SELECTED USERS STATE MANAGEMENT
   const [selectedUsers, setSelectedUsers] = useState([]);
+  // NEW MESSAGES COUNT TRACKING STATE
+  const [newMessageCount, setNewMessageCount] = useState(0);
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
   const { chatUsers, unreadConversationCount } = useConversations();
   // GETTING CHAT USER FROM CHAT SLICE
@@ -248,6 +251,17 @@ const ChatBubble = () => {
       setAvatarPreview(imageURL);
     }
   };
+  // SCROLL TO BOTTOM HANDLER FOR MESSAGE BADGE
+  const scrollToBottom = useCallback(() => {
+    // CONTAINER REFERENCE
+    const container = scrollContainerRef.current;
+    // IF NO CONTAINER REFERENCE
+    if (!container) return;
+    // SCROLLING TO BOTTOM
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    // RESETTING THE NEW MESSAGES COUNT
+    setNewMessageCount(0);
+  }, [scrollContainerRef]);
   // COMPUTING FILTERED SUGGESTED USERS LIST
   const filteredSuggestedUsers = suggestedUsers.filter(
     (u) => !chatUsers.includes(u._id)
@@ -1019,10 +1033,23 @@ const ChatBubble = () => {
                   ref={scrollContainerRef}
                 >
                   {/* MESSAGES */}
-                  <Messages scrollContainerRef={scrollContainerRef} />
+                  <Messages
+                    onIncomingMessage={() => setNewMessageCount((c) => c + 1)}
+                    scrollContainerRef={scrollContainerRef}
+                  />
                 </div>
                 {/* SCROLL TO BOTTOM */}
-                <ScrollToBottom scrollContainerRef={scrollContainerRef} />
+                <div>
+                  <ScrollToBottom scrollContainerRef={scrollContainerRef} />
+                </div>
+                {/* NEW MESSAGE BADGE */}
+                <div>
+                  <MessageBadge
+                    count={newMessageCount}
+                    onClick={scrollToBottom}
+                    scrollContainerRef={scrollContainerRef}
+                  />
+                </div>
                 {/* MESSAGE INPUT */}
                 <div className="w-full p-3 bg-white relative flex items-center justify-center rounded-b-lg">
                   <input

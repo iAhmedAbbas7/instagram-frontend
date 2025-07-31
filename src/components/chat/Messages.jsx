@@ -11,7 +11,7 @@ import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-const Messages = React.memo(({ scrollContainerRef }) => {
+const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
   // NAVIGATION
   const navigate = useNavigate();
   // REFS FOR EACH INDIVIDUAL MESSAGE
@@ -24,6 +24,10 @@ const Messages = React.memo(({ scrollContainerRef }) => {
   const isAtBottomRef = useRef(true);
   // INTERSECTION OBSERVER AT THE TOP
   const topMessageRef = useRef();
+  // BADGE BOTTOM POSITION TRACKING REF
+  const badgeAtBottomRef = useRef(true);
+  // LAST BADGE FIRED ID TRACKING REF
+  const lastBadgeFiredIdRef = useRef(null);
   // LAST MESSAGE IF REF
   const lastMessageIdRef = useRef(null);
   // INITIAL SCROLL TRACKING REF ON CHAT OPEN
@@ -252,7 +256,7 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     // RESETTING REFERENCE MESSAGE
     referenceMessage.current = { id: null, topOffset: 0, index: 0 };
   }, [allMessages, isFetchingNextPage, scrollContainerRef]);
-  // AUTO SCROLLING TO THE BOTTOM IS NEAR THE BOTTOM OF CONTAINER
+  // AUTO SCROLLING TO THE BOTTOM IF NEAR THE BOTTOM OF CONTAINER
   useEffect(() => {
     // CONTAINER REFERENCE
     const container = scrollContainerRef.current;
@@ -273,6 +277,54 @@ const Messages = React.memo(({ scrollContainerRef }) => {
     // SETTING PREVIOUS MESSAGES REF FOR NEXT TIME
     lastMessageIdRef.current = lastMessageId;
   }, [allMessages, scrollContainerRef]);
+  // EFFECT TO DETECT THE SCROLL & RESET THE NEW MESSAGE BADGE STATE
+  useEffect(() => {
+    // CONTAINER REFERENCE
+    const container = scrollContainerRef.current;
+    // IF NO CONTAINER REFERENCE
+    if (!container) return;
+    // SCROLL OBSERVER HANDLER
+    const onScroll = () => {
+      // COMPUTING THE DISTANCE FROM BOTTOM
+      const isAtBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        5;
+      // SETTING THE BADGE BOTTOM REF ACCORDINGLY
+      badgeAtBottomRef.current = isAtBottom;
+      // IF THE USER IS AT THE BOTTOM
+      if (isAtBottom) {
+        // SETTING THE LAST BADGE FIRED ID REF
+        lastBadgeFiredIdRef.current =
+          container && allMessages[allMessages.length - 1]?._id;
+      }
+    };
+    // ADDING THE EVENT LISTENER
+    container.addEventListener("scroll", onScroll);
+    // RUN ONCE ON STARTUP
+    onScroll();
+    // CLEANUP FUNCTION
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [allMessages, scrollContainerRef]);
+  // EFFECT TO HANDLE INCOMING MESSAGES WHEN USER IS NOT AT THE BOTTOM
+  useEffect(() => {
+    // GETTING THE LATEST MESSAGE
+    const latestMessage = allMessages[allMessages.length - 1];
+    // IN NO NEW INCOMING MESSAGE
+    if (!latestMessage) return;
+    // SETTING THE LATEST MESSAGE ID
+    const lastMessageId = latestMessage?._id;
+    // CONDITIONAL CHECKING
+    if (
+      lastMessageId !== lastBadgeFiredIdRef.current &&
+      !badgeAtBottomRef.current &&
+      latestMessage?.senderId?._id !== user?._id
+    ) {
+      // TRIGGERING THE INCOMING MESSAGE HANDLER
+      onIncomingMessage();
+      // REMEMBERING WE FIRED FOR THIS MESSAGE ALREADY
+      lastBadgeFiredIdRef.current = lastMessageId;
+    }
+  }, [user?._id, allMessages, onIncomingMessage]);
   // MARKING THE CONVERSATION AS READ AFTER FETCHING MESSAGES
   useEffect(() => {
     // IF LOADING OR NO CONVERSATION YET
