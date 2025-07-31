@@ -12,14 +12,15 @@ import ScrollToBottom from "./ScrollToBottom";
 import GroupChatButton from "./GroupChatButton";
 import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
-import { useCallback, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
 import { getImageDataURI } from "@/utils/getImageDataURI";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
+import MessageSoundFile from "../../assets/sounds/SEND-RECEIVE.wav";
 import { setChatUser, setCurrentConversation } from "@/redux/chatSlice";
 import {
   ArrowLeftIcon,
@@ -86,6 +87,8 @@ const ChatBubble = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   // NEW MESSAGES COUNT TRACKING STATE
   const [newMessageCount, setNewMessageCount] = useState(0);
+  // MESSAGE SOUND REF FOR SEND & RECEIVE
+  const messageSoundRef = useRef(new Audio(MessageSoundFile));
   // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
   const { chatUsers, unreadConversationCount } = useConversations();
   // GETTING CHAT USER FROM CHAT SLICE
@@ -94,6 +97,10 @@ const ChatBubble = () => {
   const { user, suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CURRENT CONVERSATION AS CHAT FROM CHAT SLICE
   const { currentConversation: chat } = useSelector((store) => store.chat);
+  // EFFECT TO PLAY MESSAGE SOUND WITHOUT DELAY
+  useEffect(() => {
+    messageSoundRef.current.load();
+  }, []);
   // SEND MESSAGE HANDLER
   const sendMessageHandler = async (receiverId) => {
     try {
@@ -117,6 +124,12 @@ const ChatBubble = () => {
       const { currentConversation } = store.getState().chat;
       // IF RESPONSE SUCCESS
       if (response.data.success) {
+        // SETTING MESSAGE SOUND TIME TO 0
+        messageSoundRef.current.currentTime = 0;
+        // PLAYING THE MESSAGE SOUND
+        messageSoundRef.current.play().catch((error) => {
+          console.error("Failed to Play Message Sound!", error);
+        });
         // CLEARING MESSAGE FIELD
         setMessageText("");
         // SETTING CURRENT CONVERSATION ID FROM CURRENT CONVERSATION
