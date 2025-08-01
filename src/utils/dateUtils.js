@@ -24,7 +24,7 @@ export const formatDateDivider = (date) => {
   // CALCULATING THE DIFFERENCE IN TIME
   const differenceTime = todayDate.getTime() - msgDate.getTime();
   // CALCULATING THE DIFFERENCE IN DAYS
-  const differenceDays = Math.ceil(differenceTime / (1000 * 60 * 24 * 24));
+  const differenceDays = Math.ceil(differenceTime / (1000 * 60 * 60 * 24));
   // SETTING THE LABEL ACCORDINGLY
   if (differenceDays === 0) return "Today";
   if (differenceDays === 1) return "Yesterday";
