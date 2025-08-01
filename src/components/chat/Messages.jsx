@@ -9,6 +9,7 @@ import useInfiniteMessages from "@/hooks/useInfiniteMessages";
 import { processMessagesWithDividers } from "@/utils/dateUtils";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import MessageSoundFile from "../../assets/sounds/SEND-RECEIVE.wav";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
@@ -40,6 +41,10 @@ const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
   // FIRST UNREAD MESSAGE REF
   const firstUnreadIdxRef = useRef(firstUnreadIdx);
+  // TRACKING REF FOR LAST MESSAGE FOR WHICH SOUND WAS FIRED
+  const lastMessageSoundFiredRef = useRef(null);
+  // MESSAGE SOUND REF FOR SEND & RECEIVE
+  const messageSoundRef = useRef(new Audio(MessageSoundFile));
   // REFERENCE MESSAGE REF
   const referenceMessage = useRef({ id: null, topOffset: 0, index: 0 });
   // GETTING CHAT USER FROM CHAT SLICE
@@ -97,6 +102,19 @@ const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
   );
   // PREVIOUS MESSAGES COUNT REF
   const previousMessagesCount = useRef(allMessages.length);
+  // EFFECT TO PLAY MESSAGE SOUND WITHOUT DELAY
+  useEffect(() => {
+    messageSoundRef.current.load();
+  }, []);
+  // EFFECT TO AVOID MESSAGE SOUND ON FIRST RENDER
+  useEffect(() => {
+    // LATEST MESSAGE IN THE CHAT
+    const latestMessage = allMessages[allMessages.length - 1];
+    // IF NO LATEST MESSAGE
+    if (!latestMessage) return;
+    // SETTING THE LAST MESSAGE ID
+    lastMessageSoundFiredRef.current = latestMessage?._id;
+  }, [allMessages]);
   // SETTING THE VAlUE OF FIRST UNREAD IDX REF
   useEffect(() => {
     firstUnreadIdxRef.current = firstUnreadIdx;
@@ -309,7 +327,7 @@ const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
   useEffect(() => {
     // GETTING THE LATEST MESSAGE
     const latestMessage = allMessages[allMessages.length - 1];
-    // IN NO NEW INCOMING MESSAGE
+    // IF NO LATEST MESSAGE
     if (!latestMessage) return;
     // SETTING THE LATEST MESSAGE ID
     const lastMessageId = latestMessage?._id;
@@ -367,6 +385,28 @@ const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
     };
     markChatRead();
   }, [initialLoading, queryClient, currentConversation, user?._id]);
+  // EFFECT TO PLAY THE MESSAGE SOUND ON EVERY INCOMING MESSAGE
+  useEffect(() => {
+    // LATEST MESSAGE IN THE CHAT
+    const latestMessage = allMessages[allMessages.length - 1];
+    // IF NO LATEST MESSAGE
+    if (!latestMessage) return;
+    // CONDITIONAL CHECKING
+    if (
+      latestMessage &&
+      latestMessage._id !== lastMessageSoundFiredRef.current &&
+      latestMessage.senderId._id !== user?._id
+    ) {
+      // SETTING THE MESSAGE SOUND TIME TO 0
+      messageSoundRef.current.currentTime = 0;
+      // PLAYING THE MESSAGE SOUND
+      messageSoundRef.current.play().catch((error) => {
+        console.error("Failed to Play Message Sound!", error);
+      });
+      // REMEMBERING WE FIRED FOR THIS MESSAGE ALREADY
+      lastMessageSoundFiredRef.current = latestMessage?._id;
+    }
+  }, [user?._id, allMessages]);
   // MAKING TO SCROLL POSITIONED AT FIRST UNREAD MESSAGE ON LOAD
   useEffect(() => {
     // IF INITIAL LOADING
