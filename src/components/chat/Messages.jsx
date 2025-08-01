@@ -532,7 +532,7 @@ const Messages = React.memo(({ scrollContainerRef, onIncomingMessage }) => {
         {/* IF FETCHING PREVIOUS MESSAGES */}
         <div
           ref={topMessageRef}
-          className="w-full my-8 flex items-center justify-center"
+          className="w-full pt-12 flex items-center justify-center"
         >
           {isFetchingNextPage && (
             <Loader2 size={30} className="text-gray-500 animate-spin" />
