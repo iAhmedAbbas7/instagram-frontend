@@ -9,8 +9,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { setPosts, setSinglePost } from "@/redux/postSlice";
 import { useLocation, useNavigate } from "react-router-dom";
-import { setChatUser, setOnlineUsers } from "@/redux/chatSlice";
 import { MessageCircleMore, MessageSquareMore, UserPlus2 } from "lucide-react";
+import {
+  setChatUser,
+  setOnlineUsers,
+  setTypingStatus,
+} from "@/redux/chatSlice";
 import {
   setSuggestedUsers,
   setUser,
@@ -491,11 +495,39 @@ const SocketListener = () => {
         };
       });
     });
+    // LISTENING FOR TYPING STATUS SOCKET EVENT
+    socketRef.current.on("typing", ({ chatId, user: typingUser }) => {
+      // SKIPPING FOR THE CURRENT USER
+      if (typingUser?._id === currentUserIdRef.current) return;
+      // UPDATING THE TYPING STATUS IN THE CHAT SLICE
+      dispatchRef.current(
+        setTypingStatus({
+          chatId,
+          isTyping: true,
+          user: typingUser,
+          userId: typingUser?._id,
+        })
+      );
+    });
+    // LISTENING FOR TYPING STOP SOCKET EVENT
+    socketRef.current.on("stopTyping", ({ chatId, user: typingUser }) => {
+      // SKIPPING FOR THE CURRENT USER
+      if (typingUser?._id === currentUserIdRef.current) return;
+      // UPDATING THE TYPING STATUS IN THE CHAT SLICE
+      dispatchRef.current(
+        setTypingStatus({
+          chatId,
+          isTyping: false,
+          user: typingUser,
+          userId: typingUser?._id,
+        })
+      );
+    });
     // CLEANUP FUNCTION
     return () => {
       // CLOSING THE SOCKET CONNECTION
       socketRef.current.close();
-      // CLOSING THE SOCKET NEW MESSAGE LISTENER
+      // TURNING THE SOCKET OFF
       socketRef.current.off();
       // CLEARING SOCKET ON UNMOUNT
       socketRef.current = null;
