@@ -7,12 +7,14 @@ import ChatsList from "./ChatsList";
 import { Button } from "../ui/button";
 import ChatButton from "./ChatButton";
 import MessageBadge from "./MessageBadge";
+import TypingBubble from "./TypingBubble";
 import axiosClient from "@/utils/axiosClient";
 import ScrollToBottom from "./ScrollToBottom";
 import GroupChatButton from "./GroupChatButton";
 import useSearchUsers from "@/hooks/useSearchUsers";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useSocketRef } from "@/context/SocketContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import useConversations from "@/hooks/useConversations";
@@ -59,12 +61,16 @@ const ChatBubble = () => {
     hasFetched,
     users: searchResults,
   } = useSearchUsers("");
-  // USING QUERY CLIENT
-  const queryClient = useQueryClient();
   // GROUP AVATAR FILE INPUT REF
   const groupAvatarRef = useRef();
+  // USING QUERY CLIENT
+  const queryClient = useQueryClient();
+  // TYPING TIMEOUT REF
+  const typingTimeoutRef = useRef(null);
   // SCROLL CONTAINER REF
   const scrollContainerRef = useRef();
+  // GETTING SOCKET CONTEXT FROM SOCKET CONTEXT
+  const socket = useSocketRef().current;
   // GROUP NAME STATE MANAGEMENT
   const [groupName, setGroupName] = useState("");
   // GROUP AVATAR STATE MANAGEMENT
@@ -87,12 +93,14 @@ const ChatBubble = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   // NEW MESSAGES COUNT TRACKING STATE
   const [newMessageCount, setNewMessageCount] = useState(0);
-  // MESSAGE SOUND REF FOR SEND & RECEIVE
-  const messageSoundRef = useRef(new Audio(MessageSoundFile));
-  // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
-  const { chatUsers, unreadConversationCount } = useConversations();
   // GETTING CHAT USER FROM CHAT SLICE
   const { chatUser } = useSelector((store) => store.chat);
+  // MESSAGE SOUND REF FOR SEND & RECEIVE
+  const messageSoundRef = useRef(new Audio(MessageSoundFile));
+  // GETTING TYPING STATUS FROM CHAT SLICE
+  const { typingStatus } = useSelector((store) => store.chat);
+  // GETTING ALL CONVERSATIONS FROM CONVERSATIONS HOOK
+  const { chatUsers, unreadConversationCount } = useConversations();
   // GETTING CURRENT USER & SUGGESTED USERS FROM AUTH SLICE
   const { user, suggestedUsers } = useSelector((store) => store.auth);
   // GETTING CURRENT CONVERSATION AS CHAT FROM CHAT SLICE
@@ -101,6 +109,19 @@ const ChatBubble = () => {
   useEffect(() => {
     messageSoundRef.current.load();
   }, []);
+  // EMITTING THE JOIN & LEAVE CHAT EVENT TO THE SERVER
+  useEffect(() => {
+    // IF NO SOCKET CONNECTION OR CONVERSATION SET
+    if (!socket?.connected || !chat?._id) return;
+    // EMITTING THE JOIN CHAT EVENT
+    socket.emit("joinChat", { chatId: chat?._id });
+    // EMITTING THE LEAVE CHAT ON UNMOUNT AND WHEN CHAT IS NOT SET
+    return () => {
+      socket.emit("leaveChat", { chatId: chat?._id });
+      // CLEARING THE TYPING TIMEOUT ON UNMOUNT
+      clearTimeout(typingTimeoutRef.current);
+    };
+  }, [socket, chat?._id]);
   // SEND MESSAGE HANDLER
   const sendMessageHandler = async (receiverId) => {
     try {
@@ -263,6 +284,19 @@ const ChatBubble = () => {
       // SETTING IMAGE PREVIEW
       setAvatarPreview(imageURL);
     }
+  };
+  // TYPING EVENT HANDLER
+  const handleTyping = () => {
+    // IF SOCKET IS NOT CONNECTED
+    if (!socket?.connected) return;
+    // EMITTING THE TYPING EVENT ON TYPING
+    socket.emit("typing", { chatId: chat?._id, user });
+    // CLEARING THE PREVIOUS TYPING TIMEOUT
+    clearTimeout(typingTimeoutRef.current);
+    // ADDING TIMEOUT TO EMIT TYPING END EVENT
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", { chatId: chat?._id, user });
+    }, 1000);
   };
   // SCROLL TO BOTTOM HANDLER FOR MESSAGE BADGE
   const scrollToBottom = useCallback(() => {
@@ -1063,13 +1097,26 @@ const ChatBubble = () => {
                     scrollContainerRef={scrollContainerRef}
                   />
                 </div>
+                {/* TYPING BUBBLE */}
+                <div>
+                  <TypingBubble
+                    show={Boolean(
+                      typingStatus[chat?._id]?.[chatUser?._id]?.isTyping ??
+                        false
+                    )}
+                    other={chatUser}
+                  />
+                </div>
                 {/* MESSAGE INPUT */}
                 <div className="w-full p-3 bg-white relative flex items-center justify-center rounded-b-lg">
                   <input
                     value={messageText}
                     id="messageText"
                     name="messageText"
-                    onChange={(e) => setMessageText(e.target.value)}
+                    onChange={(e) => {
+                      setMessageText(e.target.value);
+                      handleTyping();
+                    }}
                     onKeyDown={(e) => {
                       if (
                         e.key === "Enter" &&
