@@ -9,6 +9,7 @@ import Profile from "./components/user/Profile";
 import ChatPage from "./components/chat/ChatPage";
 import EditPost from "./components/user/EditPost";
 import PostPage from "./components/user/PostPage";
+import Notifications from "./pages/Notifications";
 import EditProfile from "./components/user/EditProfile";
 import ProtectedRoute from "./components/global/ProtectedRoute";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -59,7 +60,7 @@ const privateRoutes = {
       ),
     },
     {
-      path: "profile/:id",
+      path: "/home/profile/:id",
       element: (
         <ProtectedRoute>
           <Profile />
@@ -67,7 +68,7 @@ const privateRoutes = {
       ),
     },
     {
-      path: "account/edit",
+      path: "/home/account/edit",
       element: (
         <ProtectedRoute>
           <EditProfile />
@@ -75,7 +76,7 @@ const privateRoutes = {
       ),
     },
     {
-      path: "chat",
+      path: "/home/chat",
       element: (
         <ProtectedRoute>
           <ChatPage />
@@ -83,7 +84,7 @@ const privateRoutes = {
       ),
     },
     {
-      path: "post/:id/edit",
+      path: "/home/post/:id/edit",
       element: (
         <ProtectedRoute>
           <EditPost />
@@ -91,10 +92,18 @@ const privateRoutes = {
       ),
     },
     {
-      path: "post/:id",
+      path: "/home/post/:id",
       element: (
         <ProtectedRoute>
           <PostPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/home/notifications",
+      element: (
+        <ProtectedRoute>
+          <Notifications />
         </ProtectedRoute>
       ),
     },

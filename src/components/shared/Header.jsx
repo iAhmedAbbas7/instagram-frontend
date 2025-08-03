@@ -90,8 +90,12 @@ const Header = () => {
     // CLEARING THE SEARCH INPUT
     setQuery("");
   };
-  // CHAT PAGE CONDITIONAL DISPLAY
-  const isChatPage = pathname.startsWith("/home/chat");
+  // HIDDEN ROUTES ADDRESS ARRAY
+  const hiddenRoutesArray = ["/home/chat", "/home/notifications"];
+  // CHECKING IF THE ROUTE IS HIDDEN
+  const isHiddenRoute = hiddenRoutesArray.some((route) =>
+    pathname.startsWith(route)
+  );
   // WINDOW WIDTH TRACKING STATE
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   // SEARCH PANEL STATE
@@ -129,12 +133,13 @@ const Header = () => {
     // HEADER MAIN WRAPPER
     <section
       className={`bg-white hidden ${
-        isChatPage ? "max-[768px]:hidden" : "max-[768px]:flex"
-      } items-center justify-between px-6 h-[70px] fixed top-0 w-full z-[999999]`}
+        isHiddenRoute ? "max-[768px]:hidden" : "max-[768px]:flex"
+      } items-center justify-between px-4 h-[70px] fixed top-0 w-full z-[999999]`}
     >
       {/* LEFT SECTION */}
       <div className="flex items-center justify-center">
         <img
+          onClick={() => navigate("/home")}
           src={INSTAGRAM}
           alt="Logo"
           className="min-[600px]:h-9 h-8 cursor-pointer"
@@ -348,7 +353,11 @@ const Header = () => {
           )}
         </div>
         {/* NOTIFICATIONS */}
-        <div className="cursor-pointer" title="Notifications">
+        <div
+          onClick={() => navigate(`/home/notifications`)}
+          className="cursor-pointer"
+          title="Notifications"
+        >
           <Heart size={27} />
         </div>
       </div>
