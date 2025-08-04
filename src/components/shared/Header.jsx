@@ -4,11 +4,11 @@ import useDebounce from "@/hooks/useDebounce";
 import axiosClient from "@/utils/axiosClient";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Heart, Loader2, Search, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import INSTAGRAM from "../../assets/images/INSTAGRAM-TXT.png";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Heart, Loader2, Search, SearchSlash, SearchX, X } from "lucide-react";
 import {
   addRecentSearch,
   clearAllSearches,
@@ -230,7 +230,8 @@ const Header = () => {
                   )}
                   {/* WHEN NO RECENT SEARCHES */}
                   {noRecentSearches && (
-                    <section className="w-full flex flex-1 items-center justify-center">
+                    <section className="w-full flex flex-col flex-1 items-center justify-center">
+                      <SearchSlash size={50} className="text-gray-500" />
                       <h5 className="text-gray-500 text-sm font-semibold">
                         No recent searches.
                       </h5>
@@ -298,7 +299,8 @@ const Header = () => {
                   )}
                   {/* WHEN NO RESULTS FOUND */}
                   {zeroSearchResults && (
-                    <section className="w-full flex flex-1 items-center justify-center">
+                    <section className="w-full flex flex-col flex-1 items-center justify-center">
+                      <SearchX size={50} className="text-gray-500" />
                       <h4 className="text-sm font-semibold text-gray-500">
                         No results found
                       </h4>
