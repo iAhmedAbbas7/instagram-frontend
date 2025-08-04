@@ -96,6 +96,8 @@ const Header = () => {
   const isHiddenRoute = hiddenRoutesArray.some((route) =>
     pathname.startsWith(route)
   );
+  // GETTING UNREAD NOTIFICATIONS STATE FROM NOTIFICATION SLICE
+  const { hasUnread } = useSelector((store) => store.notification);
   // WINDOW WIDTH TRACKING STATE
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   // SEARCH PANEL STATE
@@ -355,10 +357,16 @@ const Header = () => {
         {/* NOTIFICATIONS */}
         <div
           onClick={() => navigate(`/home/notifications`)}
-          className="cursor-pointer"
+          className="cursor-pointer relative"
           title="Notifications"
         >
           <Heart size={27} />
+          {hasUnread && (
+            <span
+              title="Unread Notifications"
+              className="absolute w-2.5 h-2.5 top-0 right-0 rounded-full bg-red-500"
+            ></span>
+          )}
         </div>
       </div>
     </section>
