@@ -116,7 +116,7 @@ const SocketListener = () => {
     if (!user || socketRef.current?.connected) return;
     // SERVER URL
     const serverURL = "http://localhost:8080";
-    // INITIATING SOCKET
+    // INITIATING SOCKET IF NOT INITIALIZED
     socketRef.current = io(serverURL, {
       query: {
         userId: user?._id,
@@ -288,7 +288,10 @@ const SocketListener = () => {
           );
         }
         // UPDATING THE SINGLE POST LIKES
-        if (notification?.postId === singlePostRef.current._id) {
+        if (
+          singlePostRef.current !== null &&
+          notification?.postId === singlePostRef.current?._id
+        ) {
           dispatchRef.current(
             setSinglePost({
               ...singlePostRef.current,
