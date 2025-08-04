@@ -3,12 +3,12 @@ import { toast } from "sonner";
 import useDebounce from "@/hooks/useDebounce";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Loader2, Search, SearchSlash, SearchX, X } from "lucide-react";
 import {
   addRecentSearch,
   clearAllSearches,
@@ -209,7 +209,8 @@ const SearchSidebar = ({ isOpen, onClose, offset, justOpened }) => {
             )}
             {/* WHEN NO RECENT SEARCHES */}
             {!debouncedQuery && !loading && recentSearches.length === 0 && (
-              <section className="w-full flex flex-1 items-center justify-center">
+              <section className="w-full flex flex-1 flex-col items-center justify-center">
+                <SearchSlash size={50} className="text-gray-500" />
                 <h5 className="text-gray-500 text-sm font-semibold">
                   No recent searches.
                 </h5>
@@ -271,7 +272,8 @@ const SearchSidebar = ({ isOpen, onClose, offset, justOpened }) => {
             )}
             {/* WHEN NO RESULTS FOUND */}
             {debouncedQuery && results.length === 0 && !loading && (
-              <section className="w-full flex flex-1 items-center justify-center">
+              <section className="w-full flex flex-1 flex-col items-center justify-center">
+                <SearchX size={50} className="text-gray-500" />
                 <h4 className="text-sm font-semibold text-gray-500">
                   No results found
                 </h4>
