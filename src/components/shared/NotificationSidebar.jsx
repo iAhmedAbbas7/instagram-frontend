@@ -1,6 +1,6 @@
 // <= IMPORTS =>
-import { Trash2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { BellOffIcon, Trash2, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
 import { format, isAfter, isToday, subDays } from "date-fns";
@@ -174,7 +174,7 @@ const NotificationSidebar = ({ isOpen, onClose, offset, justOpened }) => {
           ref={notificationSidebarRef}
         >
           {/* MAIN NOTIFICATION CONTAINER */}
-          <section className="flex flex-col items-start justify-start w-full h-full pt-5 overflow-y-auto">
+          <section className="flex flex-col items-start justify-start w-full h-full pt-5">
             {/* HEADING & CLEAR BUTTON */}
             <div className="py-4 px-4 w-full flex items-center justify-between border-b-2 border-gray-200">
               <h1 className="w-full text-[1.5rem] font-semibold">
@@ -197,19 +197,23 @@ const NotificationSidebar = ({ isOpen, onClose, offset, justOpened }) => {
                 </span>
               )}
             </div>
-            {/* RENDERING BUCKETS */}
-            {renderBuckets("Today", TODAY)}
-            {renderBuckets("Last 7 Days", LAST_7_DAYS)}
-            {renderBuckets("Last 30 Days", LAST_30_DAYS)}
-            {renderBuckets("Older", OLDER)}
-            {/* IF NO NOTIFICATIONS AVAILABLE */}
-            {allNotifications.length === 0 && (
-              <div className="w-full  flex flex-1 items-center justify-center">
-                <h4 className="text-sm font-semibold text-gray-500">
-                  No notifications available
-                </h4>
-              </div>
-            )}
+            {/* NOTIFICATIONS SECTION */}
+            <div className="flex-1 overflow-y-auto h-full w-full">
+              {/* RENDERING BUCKETS */}
+              {renderBuckets("Today", TODAY)}
+              {renderBuckets("Last 7 Days", LAST_7_DAYS)}
+              {renderBuckets("Last 30 Days", LAST_30_DAYS)}
+              {renderBuckets("Older", OLDER)}
+              {/* IF NO NOTIFICATIONS AVAILABLE */}
+              {allNotifications.length === 0 && (
+                <div className="w-full h-full flex flex-col flex-1 items-center justify-center">
+                  <BellOffIcon size={50} className="text-gray-500" />
+                  <h4 className="text-sm font-semibold text-gray-500">
+                    No notifications available
+                  </h4>
+                </div>
+              )}
+            </div>
           </section>
         </motion.aside>
       )}
