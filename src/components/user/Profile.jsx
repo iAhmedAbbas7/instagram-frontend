@@ -2,6 +2,7 @@
 import { useState } from "react";
 import useTitle from "@/hooks/useTitle";
 import { useSelector } from "react-redux";
+import FollowDialog from "../shared/FollowDialog";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaMessage } from "react-icons/fa6";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,6 +11,7 @@ import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
+  ChevronDown,
   Film,
   Grid,
   Loader2,
@@ -34,20 +36,20 @@ const Profile = () => {
   const userId = params.id;
   // USING USE GET USER PROFILE HOOK
   const { loading } = useGetUserProfile(userId);
-  // GETTING USER PROFILE FORM AUTH SLICE
-  const { userProfile } = useSelector((store) => store.auth);
-  // AVATAR FALLBACK MANAGEMENT
-  const fullNameInitials = userProfile?.fullName
-    ? getFullNameInitials(userProfile?.fullName)
-    : "";
-  // ACTIVE TAB STATE MANAGEMENT
-  const [activeTab, setActiveTab] = useState("POSTS");
-  // COMMENT DIALOG STATE
-  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // ACTIVE POST STATE MANAGEMENT
   const [activePost, setActivePost] = useState(null);
+  // ACTIVE TAB STATE MANAGEMENT
+  const [activeTab, setActiveTab] = useState("POSTS");
+  // GETTING USER PROFILE FORM AUTH SLICE
+  const { userProfile } = useSelector((store) => store.auth);
+  // FOLLOW DIALOG VISIBILITY STATE
+  const [followDialogOpen, setFollowDialogOpen] = useState(false);
+  // COMMENT DIALOG STATE
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // PROFILE DIALOG VISIBILITY STATE
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  // IS CURRENT USER FOLLOWING OTHER USER FLAG
+  const isFollowingOther = user?.followers?.includes(userProfile?._id);
   // OWNERS SETTINGS DIALOG ITEMS
   const ownersDialogItems = [
     { id: 1, label: "Apps and Websites" },
@@ -73,14 +75,16 @@ const Profile = () => {
   const isOwner = userProfile?._id === user?._id;
   // SETTING DIALOG ITEMS BASED ON CURRENT USER
   const dialogItems = isOwner ? ownersDialogItems : otherDialogItems;
+  // FOLLOW USER HANDLER
+  const followUserHandler = async () => {};
+  // ACTIVE TAB CHANGE HANDLER
+  const changeActiveTabHandler = (tab) => {
+    setActiveTab(tab);
+  };
   // COMMENT DIALOG CLOSE STATE HANDLER
   const commentDialogCloseStateHandler = () => {
     setCommentDialogOpen(false);
     setActivePost(null);
-  };
-  // ACTIVE TAB CHANGE HANDLER
-  const changeActiveTabHandler = (tab) => {
-    setActiveTab(tab);
   };
   // PROFILE DIALOG ITEM CLICK HANDLER
   const profileDialogItemClickHandler = (label) => {
@@ -92,6 +96,10 @@ const Profile = () => {
       return;
     }
   };
+  // AVATAR FALLBACK MANAGEMENT
+  const fullNameInitials = userProfile?.fullName
+    ? getFullNameInitials(userProfile?.fullName)
+    : "";
   // LOADING UI
   if (loading || !userProfile) {
     return (
@@ -128,9 +136,11 @@ const Profile = () => {
             <div className="flex flex-col items-start justify-start">
               {/* USERNAME & ACTIONS */}
               <div className="flex items-center gap-[1rem]">
+                {/* USERNAME */}
                 <span className="text-[1.2rem] font-semibold ">
                   {userProfile?.username}
                 </span>
+                {/* ACTIONS */}
                 {userProfile?._id === currentUserId ? (
                   <>
                     <button
@@ -145,20 +155,36 @@ const Profile = () => {
                   </>
                 ) : (
                   <>
-                    <button className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none">
-                      Follow
+                    <button
+                      onClick={() =>
+                        isFollowingOther
+                          ? setFollowDialogOpen(true)
+                          : followUserHandler
+                      }
+                      className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none flex items-center justify-center gap-1"
+                    >
+                      <span>{isFollowingOther ? "Following" : "Follow"}</span>
+                      {isFollowingOther && <ChevronDown size={20} />}
                     </button>
                     <button className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none">
                       Message
                     </button>
                     <button
                       title="Similar Accounts"
-                      className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm p-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none"
+                      className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-2 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none"
                     >
-                      <UserPlus size={20} />
+                      <UserPlus size={18} />
                     </button>
                   </>
                 )}
+                {/* FOLLOW DIALOG */}
+                <div>
+                  <FollowDialog
+                    open={followDialogOpen}
+                    setOpen={setFollowDialogOpen}
+                    user={userProfile}
+                  />
+                </div>
                 {/* PROFILE DIALOG */}
                 <Dialog
                   open={showProfileDialog}
