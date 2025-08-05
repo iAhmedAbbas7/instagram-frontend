@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import {
   Film,
   Grid,
@@ -15,6 +16,7 @@ import {
   MoreHorizontal,
   Settings,
   Tags,
+  UserPlus,
 } from "lucide-react";
 
 const Profile = () => {
@@ -44,6 +46,33 @@ const Profile = () => {
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // ACTIVE POST STATE MANAGEMENT
   const [activePost, setActivePost] = useState(null);
+  // PROFILE DIALOG VISIBILITY STATE
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  // OWNERS SETTINGS DIALOG ITEMS
+  const ownersDialogItems = [
+    { id: 1, label: "Apps and Websites" },
+    { id: 2, label: "QR Code" },
+    { id: 3, label: "Notifications" },
+    { id: 4, label: "Settings and Privacy" },
+    { id: 5, label: "Meta Verified" },
+    { id: 6, label: "Supervision" },
+    { id: 7, label: "Login Activity" },
+    { id: 8, label: "Logout" },
+    { id: 9, label: "Cancel" },
+  ];
+  // OTHERS PROFILE DIALOG ITEMS
+  const otherDialogItems = [
+    { id: 1, label: "Block" },
+    { id: 2, label: "Restrict" },
+    { id: 3, label: "Report" },
+    { id: 4, label: "Share To" },
+    { id: 5, label: "About this Account" },
+    { id: 6, label: "Cancel" },
+  ];
+  // SETTING THE OWNER BASED ON CURRENT USER
+  const isOwner = userProfile?._id === user?._id;
+  // SETTING DIALOG ITEMS BASED ON CURRENT USER
+  const dialogItems = isOwner ? ownersDialogItems : otherDialogItems;
   // COMMENT DIALOG CLOSE STATE HANDLER
   const commentDialogCloseStateHandler = () => {
     setCommentDialogOpen(false);
@@ -52,6 +81,16 @@ const Profile = () => {
   // ACTIVE TAB CHANGE HANDLER
   const changeActiveTabHandler = (tab) => {
     setActiveTab(tab);
+  };
+  // PROFILE DIALOG ITEM CLICK HANDLER
+  const profileDialogItemClickHandler = (label) => {
+    // IF NO LABEL
+    if (!label) return;
+    // IF CANCEL WAS CLICKED
+    if (label === "Cancel") {
+      setShowProfileDialog(false);
+      return;
+    }
   };
   // LOADING UI
   if (loading || !userProfile) {
@@ -88,7 +127,7 @@ const Profile = () => {
             {/* TEXT SECTION */}
             <div className="flex flex-col items-start justify-start">
               {/* USERNAME & ACTIONS */}
-              <div className="flex items-center gap-[1.5rem]">
+              <div className="flex items-center gap-[1rem]">
                 <span className="text-[1.2rem] font-semibold ">
                   {userProfile?.username}
                 </span>
@@ -103,20 +142,76 @@ const Profile = () => {
                     <button className="border-none outline-none focus:outline-none bg-gray-200 font-semibold rounded-sm px-3 py-1 hover:bg-gray-300 cursor-pointer text-[0.9rem]">
                       View Archive
                     </button>
-                    <span>
-                      <Settings size={30} className="cursor-pointer" />
-                    </span>
                   </>
                 ) : (
                   <>
-                    <button className="border-none outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem]">
+                    <button className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none">
                       Follow
                     </button>
-                    <span>
-                      <MoreHorizontal size={30} className="cursor-pointer" />
-                    </span>
+                    <button className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none">
+                      Message
+                    </button>
+                    <button
+                      title="Similar Accounts"
+                      className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm p-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none"
+                    >
+                      <UserPlus size={20} />
+                    </button>
                   </>
                 )}
+                {/* PROFILE DIALOG */}
+                <Dialog
+                  open={showProfileDialog}
+                  onOpenChange={setShowProfileDialog}
+                >
+                  <DialogTrigger asChild>
+                    {userProfile?._id === user?._id ? (
+                      <div title="Settings" className="cursor-pointer">
+                        <Settings size={28} className="hover:text-gray-500" />
+                      </div>
+                    ) : (
+                      <div title="Options" className="cursor-pointer">
+                        <MoreHorizontal
+                          size={28}
+                          className="hover:text-gray-500"
+                        />
+                      </div>
+                    )}
+                  </DialogTrigger>
+                  <DialogContent
+                    onInteractOutside={() => setShowProfileDialog(false)}
+                    className="p-0 border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm"
+                  >
+                    {/* DIALOG CONTENT WRAPPER */}
+                    <div className="w-full flex flex-col items-center justify-center">
+                      {dialogItems.map((item) => (
+                        <div
+                          onClick={() =>
+                            profileDialogItemClickHandler(item.label)
+                          }
+                          className={`flex items-center justify-center w-full py-3 px-3 border-gray-200 ${
+                            item.label === "Cancel"
+                              ? "border-b-0"
+                              : "border-b-2"
+                          } font-[600] cursor-pointer ${
+                            item.label === "Block" ||
+                            item.label === "Report" ||
+                            item.label === "Restrict"
+                              ? "text-red-500"
+                              : "text-black"
+                          } hover:bg-gray-100 overflow-hidden ${
+                            (item.label === "Apps and Websites" ||
+                              item.label === "Block") &&
+                            "rounded-t-sm"
+                          } ${item.label === "Cancel" && "rounded-b-sm"}`}
+                          key={item.id}
+                        >
+                          {item.label}
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
               {/* PROFILE STATS */}
               <div className="flex items-center gap-8 mt-6">
@@ -132,7 +227,13 @@ const Profile = () => {
                 </span>
                 <span className="text-[1.1rem] font-semibold">
                   {userProfile?.followers?.length}{" "}
-                  <span className="text-gray-500 font-normal">followers</span>
+                  <span className="text-gray-500 font-normal">
+                    {userProfile?.followers?.length === 0
+                      ? "followers"
+                      : userProfile?.followers?.length === 1
+                      ? "follower"
+                      : "followers"}
+                  </span>
                 </span>
                 <span className="text-[1.1rem] font-semibold">
                   {userProfile?.following?.length}{" "}
