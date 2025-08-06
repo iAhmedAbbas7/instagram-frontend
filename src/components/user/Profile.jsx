@@ -1,10 +1,13 @@
 // <= IMPORTS =>
-import { useState } from "react";
+import { toast } from "sonner";
 import useTitle from "@/hooks/useTitle";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { setUser } from "@/redux/authSlice";
+import axiosClient from "@/utils/axiosClient";
 import FollowDialog from "../shared/FollowDialog";
 import CommentDialog from "../shared/CommentDialog";
 import { FaHeart, FaMessage } from "react-icons/fa6";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import useGetUserProfile from "@/hooks/useGetUserProfile";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
@@ -22,10 +25,8 @@ import {
 } from "lucide-react";
 
 const Profile = () => {
-  // CURRENT USER CREDENTIALS
-  const { user } = useSelector((store) => store.auth);
-  // SETTING LOGGED IN USER ID
-  const currentUserId = user?._id;
+  // DISPATCH
+  const dispatch = useDispatch();
   // USE TITLE HOOK
   useTitle("Instagram - Profile");
   // NAVIGATION
@@ -38,8 +39,12 @@ const Profile = () => {
   const { loading } = useGetUserProfile(userId);
   // ACTIVE POST STATE MANAGEMENT
   const [activePost, setActivePost] = useState(null);
+  // CURRENT USER CREDENTIALS
+  const { user } = useSelector((store) => store.auth);
   // ACTIVE TAB STATE MANAGEMENT
   const [activeTab, setActiveTab] = useState("POSTS");
+  // FOLLOWING LOADING STATE
+  const [followLoading, setFollowLoading] = useState(false);
   // GETTING USER PROFILE FORM AUTH SLICE
   const { userProfile } = useSelector((store) => store.auth);
   // FOLLOW DIALOG VISIBILITY STATE
@@ -48,8 +53,16 @@ const Profile = () => {
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   // PROFILE DIALOG VISIBILITY STATE
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  // IS CURRENT USER FOLLOWING OTHER USER FLAG
-  const isFollowingOther = user?.followers?.includes(userProfile?._id);
+  // FOLLOWING STATE MANAGEMENT
+  const [isFollowingOther, setIsFollowingOther] = useState(
+    user?.following?.includes(userProfile?._id)
+  );
+  // SYNCING THE INITIAL FOLLOWING STATE
+  useEffect(() => {
+    if (user?.following) {
+      setIsFollowingOther(user?.following?.includes(userProfile?._id));
+    }
+  }, [user, userProfile]);
   // OWNERS SETTINGS DIALOG ITEMS
   const ownersDialogItems = [
     { id: 1, label: "Apps and Websites" },
@@ -76,7 +89,39 @@ const Profile = () => {
   // SETTING DIALOG ITEMS BASED ON CURRENT USER
   const dialogItems = isOwner ? ownersDialogItems : otherDialogItems;
   // FOLLOW USER HANDLER
-  const followUserHandler = async () => {};
+  const followUserHandler = async () => {
+    // LOADING STATE
+    setFollowLoading(true);
+    // MAKING REQUEST
+    try {
+      const response = await axiosClient.get(
+        `/user/followOrUnfollow/${userProfile?._id}`
+      );
+      // IF RESPONSE SUCCESS
+      if (response.data.success) {
+        // UPDATING THE FOLLOWING STATE
+        setIsFollowingOther(!isFollowingOther);
+        // CURRENT USER ORIGINAL FOLLOWING LIST
+        const originalFollowing = user?.following ? [...user.following] : [];
+        // UPDATING THE CURRENT USER FOLLOWING
+        const newFollowing = [userProfile?._id, ...originalFollowing];
+        // DISPATCHING UPDATED CURRENT USER IN THE AUTH SLICE
+        dispatch(setUser({ ...user, following: newFollowing }));
+        // TOASTING SUCCESS MESSAGE
+        toast.success(response?.data?.message);
+      }
+    } catch (error) {
+      // LOGGING ERROR MESSAGE
+      console.error("Failed to Perform Action!", error);
+      // TOASTING ERROR MESSAGE
+      toast.error(
+        error?.response?.data?.message || "Failed to Perform Action!"
+      );
+    } finally {
+      // LOADING STATE
+      setFollowLoading(false);
+    }
+  };
   // ACTIVE TAB CHANGE HANDLER
   const changeActiveTabHandler = (tab) => {
     setActiveTab(tab);
@@ -141,7 +186,7 @@ const Profile = () => {
                   {userProfile?.username}
                 </span>
                 {/* ACTIONS */}
-                {userProfile?._id === currentUserId ? (
+                {userProfile?._id === user?._id ? (
                   <>
                     <button
                       onClick={() => navigate("/home/account/edit")}
@@ -159,12 +204,22 @@ const Profile = () => {
                       onClick={() =>
                         isFollowingOther
                           ? setFollowDialogOpen(true)
-                          : followUserHandler
+                          : followUserHandler()
                       }
                       className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none flex items-center justify-center gap-1"
                     >
-                      <span>{isFollowingOther ? "Following" : "Follow"}</span>
-                      {isFollowingOther && <ChevronDown size={20} />}
+                      {followLoading ? (
+                        <Loader2 size={21} className="animate-spin" />
+                      ) : (
+                        <>
+                          <span>
+                            {isFollowingOther ? "Following" : "Follow"}
+                          </span>
+                          <span>
+                            {isFollowingOther && <ChevronDown size={20} />}
+                          </span>
+                        </>
+                      )}
                     </button>
                     <button className="outline-none focus:outline-none bg-sky-400 text-white font-[600] rounded-sm px-3 py-1 hover:bg-sky-300 cursor-pointer text-[0.9rem] border-none">
                       Message
