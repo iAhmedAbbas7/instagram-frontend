@@ -6,6 +6,7 @@ import useTitle from "@/hooks/useTitle";
 import { useDispatch } from "react-redux";
 import axiosClient from "@/utils/axiosClient";
 import { useNavigate } from "react-router-dom";
+import { setSettings } from "@/redux/settingsSlice";
 import { Loader2, LogIn, User2, X } from "lucide-react";
 import INSTA_FORM from "../../assets/images/INSTAGRAM-TXT.png";
 import { setIsLoggedIn, setIsLoggingOut, setUser } from "@/redux/authSlice";
@@ -55,6 +56,8 @@ const Login = () => {
         dispatch(setIsLoggingOut(false));
         // SETTING USER IN THE AUTH STATE
         dispatch(setUser(response.data.user));
+        // SETTING SETTINGS IN THE SETTINGS SLICE
+        dispatch(setSettings(response.data.settings));
         // NAVIGATING TO HOMEPAGE
         navigate("/home");
         // TOASTING SUCCESS MESSAGE
