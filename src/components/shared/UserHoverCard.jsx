@@ -108,7 +108,7 @@ const UserHoverCard = ({ user, children }) => {
       >
         {children}
       </HoverCardTrigger>
-      <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[380px] shadow-2xl bg-white z-[50]">
+      <HoverCardContent className="border-none outline-none focus:outline-none focus-visible:ring-0 rounded-sm p-0 w-[380px] shadow-[0_4px_15px_rgba(0,0,0,0.4)] bg-white z-[50]">
         {/* HOVER CONTENT MAIN WRAPPER */}
         <div className="w-full flex flex-col items-center justify-center">
           {/* HEADER */}
