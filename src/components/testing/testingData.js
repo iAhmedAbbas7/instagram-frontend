@@ -1,6 +1,6 @@
 // <== MOCKUP TESTING DATA ==>
 
-// <== HELPER : PICSUM IMAGE URL WITH FIXED DIMESIONS USING A SEED NUMBER ==>
+// <== HELPER : PICSUM IMAGE URL WITH FIXED DIMENSIONS USING A SEED NUMBER ==>
 const randomImage = (n) => `https://picsum.photos/seed/${n}/400/700`;
 
 // <== EXPORT : STORY GROUPS MOCKUPS - 15 STATIC GROUPS ==>
@@ -30,7 +30,7 @@ export const storyGroups = Array.from({ length: 15 }).map((_, i) => ({
 export const storiesById = Object.fromEntries(
   // MAPPING EACH STORY GROUP TO A KEY VALUE PAIR
   storyGroups.map((g, i) => {
-    // GETTTING THE STORY ID THIS GROUP REFERENCES (FIRST ITEM IN STORY ID'S)
+    // GETTING THE STORY ID THIS GROUP REFERENCES (FIRST ITEM IN STORY ID'S)
     const storyId = g.storyIds[0];
     // BUILDING AN ARRAY FO MEDIA ENTRIES FOR EACH STORY WITH VARYING LENGTHS
     const medias = Array.from({ length: 3 + (i % 2) }).map((_, mIdx) => {
