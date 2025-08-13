@@ -131,10 +131,7 @@ const StoryTray = () => {
                     className="flex flex-col items-center gap-2"
                   >
                     {/* AVATAR SECTION */}
-                    <div
-                      onClick={openUpload}
-                      className="w-18 h-18 rounded-full"
-                    >
+                    <div className="w-18 h-18 rounded-full">
                       {/* AVATAR */}
                       <Avatar
                         className={`w-18 h-18 rounded-full cursor-pointer ${
