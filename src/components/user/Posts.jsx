@@ -46,7 +46,7 @@ const Posts = () => {
       )}
       {/* IF NO MORE POSTS AVAILABLE */}
       {!hasMore && !loading && (
-        <div className="flex items-center justify-center py-6">
+        <div className="flex items-center justify-center pb-6">
           <h1 className="flex items-center gap-2 px-3 py-1 rounded-sm bg-gray-100">
             <X className="text-sky-400" />
             <span className="text-gray-500 font-semibold">No More Posts</span>
