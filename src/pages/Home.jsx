@@ -8,7 +8,7 @@ const Home = () => {
   // USE TITLE HOOK
   useTitle("Instagram - Home");
   return (
-    <div className="flex py-6 px-3">
+    <div className="flex max-[768px]:pt-0 py-6">
       <div className="flex grow">
         <Feed />
         <Outlet />
