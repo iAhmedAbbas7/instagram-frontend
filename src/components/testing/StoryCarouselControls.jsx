@@ -59,7 +59,7 @@ export const NextButton = (props) => {
       type="button"
       {...restProps}
     >
-      <ChevronRight size={35} className="text-gray-500" />
+      <ChevronRight size={28} className="text-white" />
       {children}
     </button>
   );
@@ -75,7 +75,7 @@ export const PrevButton = (props) => {
       type="button"
       {...restProps}
     >
-      <ChevronLeft size={35} className="text-gray-500" />
+      <ChevronLeft size={28} className="text-white" />
       {children}
     </button>
   );
