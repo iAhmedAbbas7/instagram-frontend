@@ -1,24 +1,10 @@
 // <== IMPORTS ==>
-import { useMemo } from "react";
 import { X } from "lucide-react";
-import "./StoryViewCarousel.css";
-import { storyGroups } from "./testingData";
 import StoryViewCarousel from "./StoryViewCarousel";
 import { AnimatePresence, motion } from "framer-motion";
 import INSTAGRAM from "../../assets/images/INSTAGRAM.png";
 
-const StoryModalTest = ({ open, onClose, storyId }) => {
-  // FINDING THE INDEX OF THE GROUP WHOSE STORY ID MATCHES THE PROVIDED STORY ID
-  const { groups, startIndex } = useMemo(() => {
-    // MAKING SURE THE GROUPS IS AN ARRAY
-    const groupsArray = Array.isArray(storyGroups) ? storyGroups : [];
-    // FINDING THE INDEX OF GROUP WHICH MATCHES THE STORY ID
-    const index = groupsArray.findIndex((group) =>
-      (group.storyIds || []).includes(storyId)
-    );
-    // RETURNING THE GROUP ARRAY AND THE START INDEX
-    return { groups: groupsArray, startIndex: index >= 0 ? index : 0 };
-  }, [storyId]);
+const StoryModalTest = ({ open, onClose }) => {
   // COMPONENT'S RETURN
   return (
     <AnimatePresence>
@@ -58,7 +44,7 @@ const StoryModalTest = ({ open, onClose, storyId }) => {
               </div>
             </header>
             {/* STORIES SECTION */}
-            <StoryViewCarousel groups={groups} startIndex={startIndex} />
+            <StoryViewCarousel />
           </motion.div>
         </motion.div>
       )}
