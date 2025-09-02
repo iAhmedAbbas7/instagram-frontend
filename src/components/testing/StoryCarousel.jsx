@@ -1,11 +1,12 @@
 // <== IMPORTS ==>
 import { Plus } from "lucide-react";
-import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import axiosClient from "@/utils/axiosClient";
 import StoryModalTest from "./StoryModalTest";
 import StoryUpload from "../story/StoryUpload";
 import useEmblaCarousel from "embla-carousel-react";
+import { useDispatch, useSelector } from "react-redux";
+import { closeModal, openModal } from "@/redux/storySlice";
+import useInfiniteStories from "@/hooks/useInfiniteStories";
 import { getFullNameInitials } from "@/utils/getFullNameInitials";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -15,14 +16,10 @@ import {
 } from "./StoryCarouselControls";
 
 const StoryCarousel = (props) => {
+  // DISPATCH
+  const dispatch = useDispatch();
   // GETTING SLIDES NUMBER AND OPTIONS FROM PROPS
   const { options } = props;
-  // TRAY STATE FOR STORIES
-  const [tray, setTray] = useState([]);
-  // LOADING STATE
-  const [loading, setLoading] = useState(false);
-  // STORY MODAL OPEN STATE FOR TESTING
-  const [modalOpen, setModalOpen] = useState(false);
   // GETTING CURRENT USER CREDENTIALS FROM AUTH SLICE
   const { user } = useSelector((store) => store.auth);
   // UPLOAD DIALOG OPEN STATE
@@ -36,48 +33,61 @@ const StoryCarousel = (props) => {
     onPrevButtonClick,
     onNextButtonClick,
   } = usePrevNextButtons(emblaApi);
-  // LOADING STORIES TRAY
-  const loadStoriesTray = async () => {
-    // LOADING STATE
-    setLoading(true);
-    try {
-      // MAKING REQUEST
-      const response = await axiosClient.get(`/story/tray`);
-      // IF RESPONSE SUCCESS
-      if (response.data.success) {
-        // SETTING STORIES IN THE TRAY
-        setTray(response.data.tray || []);
-      } else {
-        // SETTING EMPTY STORIES TRAY
-        setTray([]);
-      }
-    } catch (error) {
-      // LOGGING ERROR MESSAGE
-      console.error("Failed to Fetch Stories", error);
-      // SETTING EMPTY STORIES TRAY
-      setTray([]);
-    } finally {
-      // LOADING STATE
-      setLoading(false);
-    }
-  };
-  // FETCHING STORIES ON MOUNT
+  // USING INFINITE STORIES HOOK
+  const {
+    isLoading,
+    allStories,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteStories({ limit: 20 });
+  // EMBLA API SELECT LISTENER TO TRIGGER FETCH NEXT PAGE WHEN NEAR THE END
   useEffect(() => {
-    loadStoriesTray();
-  }, []);
+    // IF NO EMBLA API
+    if (!emblaApi) return;
+    // ON SELECT HANDLER
+    const onSelect = () => {
+      try {
+        // SELECTED SCROLL SNAP
+        const selected = emblaApi.selectedScrollSnap();
+        // TOTAL SNAP LIST
+        const total = emblaApi.scrollSnapList().length;
+        // WHEN USER REACHES THE LAST TWO SLIDES, TRIGGERING NEXT PAGE FETCH IF EXISTS
+        if (
+          selected >= Math.max(0, total - 2) &&
+          hasNextPage &&
+          !isFetchingNextPage
+        ) {
+          fetchNextPage();
+        }
+      } catch (err) {
+        // LOGGING ERROR MESSAGE
+        console.error("Failed to Fetch Next Page!", err);
+      }
+    };
+    // ATTACHING THE SELECT HANDLER TO API
+    emblaApi.on("select", onSelect);
+    // CLEANUP
+    return () => {
+      // IF NO EMBLA API
+      if (!emblaApi) return;
+      // REMOVING THE EVENT
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, fetchNextPage, hasNextPage, isFetchingNextPage]);
   // UPLOAD DIALOG CLOSE HANDLER
   const closeUpload = () => {
     setUploadOpen(false);
   };
-  // OPEN STORY MODAL HANDLER
-  const openStoryHandler = () => {
-    // OPENING THE STORY MODAL
-    setModalOpen(true);
-  };
   // CLOSE STORY MODAL HANDLER
   const closeStoryModal = () => {
-    // CLOSING THE STORY MODAL
-    setModalOpen(false);
+    // CLOSING THE MODAL
+    dispatch(closeModal());
+  };
+  // OPEN STORY MODAL HANDLER
+  const openStoryHandler = () => {
+    // OPENING THE MODAL
+    dispatch(openModal());
   };
   // UPLOAD DIALOG OPEN HANDLER
   const openUpload = () => setUploadOpen(true);
@@ -124,7 +134,7 @@ const StoryCarousel = (props) => {
               <span className="text-xs font-semibold">Your Story</span>
             </div>
             {/* STORIES LOADING UI */}
-            {loading && (
+            {isLoading && (
               <div className="flex items-center gap-4 p-2">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex flex-col items-center gap-2.5 ">
@@ -139,8 +149,8 @@ const StoryCarousel = (props) => {
               </div>
             )}
             {/* OTHER USER'S STORIES */}
-            {!loading &&
-              tray.map((g) => (
+            {!isLoading &&
+              (allStories || []).map((g) => (
                 <>
                   {/* STORY BUBBLE & USERNAME */}
                   <div
@@ -197,9 +207,15 @@ const StoryCarousel = (props) => {
           )}
         </div>
         {/* STORY VIEW MODAL */}
-        <StoryModalTest open={modalOpen} onClose={closeStoryModal} />
+        <>
+          <StoryModalTest open={false} onClose={closeStoryModal} />
+        </>
         {/* STORY UPLOAD MODAL */}
-        {uploadOpen && <StoryUpload open={uploadOpen} onClose={closeUpload} />}
+        <>
+          {uploadOpen && (
+            <StoryUpload open={uploadOpen} onClose={closeUpload} />
+          )}
+        </>
       </section>
     </>
   );
