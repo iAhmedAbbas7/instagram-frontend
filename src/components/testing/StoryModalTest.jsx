@@ -1,14 +1,29 @@
 // <== IMPORTS ==>
 import { X } from "lucide-react";
+import { closeModal } from "@/redux/storySlice";
 import StoryViewCarousel from "./StoryViewCarousel";
+import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
 import INSTAGRAM from "../../assets/images/INSTAGRAM.png";
 
 const StoryModalTest = ({ open, onClose }) => {
+  // DISPATCH
+  const dispatch = useDispatch();
+  // GETTING MODAL OPEN STATE FROM REDUX
+  const modalOpenRedux = useSelector((store) => store.stories?.modalOpen);
+  // DECIDING IF THE MODAL IS OPEN (PROP OR REDUX)
+  const isOpen = !!open || !!modalOpenRedux;
+  // CLOSE MODAL HANDLER
+  const handleClose = () => {
+    // DISPATCHING CLOSE MODAL ACTION
+    dispatch(closeModal());
+    // CLOSING THROUGH PROP FUNCTION AS WELL
+    if (typeof onClose === "function") onClose();
+  };
   // COMPONENT'S RETURN
   return (
     <AnimatePresence>
-      {open && (
+      {isOpen && (
         <motion.div
           key="Story-Modal-Overlay"
           initial={{ opacity: 0 }}
@@ -38,7 +53,7 @@ const StoryModalTest = ({ open, onClose }) => {
               <div
                 className="cursor-pointer"
                 title="Close"
-                onClick={() => onClose()}
+                onClick={() => handleClose()}
               >
                 <X size={40} className="text-white" />
               </div>
