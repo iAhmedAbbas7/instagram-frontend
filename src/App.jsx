@@ -1,6 +1,7 @@
 // <= IMPORTS =>
 import Main from "./pages/Main";
 import Home from "./pages/Home";
+import { useEffect } from "react";
 import Login from "./components/auth/Login";
 import MainLayout from "./layout/MainLayout";
 import RootLayout from "./layout/RootLayout";
@@ -124,6 +125,23 @@ const appRouter = createBrowserRouter([
 ]);
 
 const App = () => {
+  // EFFECT TO HIDE SPLASH SCREEN AFTER REACT MOUNTS
+  useEffect(() => {
+    // MOUNTED FLAg
+    let mounted = true;
+    // SETTING TIMER FUNCTION
+    const TIMER = setTimeout(() => {
+      // IF REACT IS MOUNTED AND THE GLOBAL HIDE SPLASH SCREEN METHOD EXISTS
+      if (mounted && window?.__APP__HIDE__SPLASH) window.__APP__HIDE__SPLASH();
+    }, 120);
+    // CLEANUP FUNCTION
+    return () => {
+      // RESETTING MOUNTED FLAG
+      mounted = false;
+      // CLEARING THE TIMEOUT FUNCTION
+      clearTimeout(TIMER);
+    };
+  }, []);
   return (
     <>
       <RouterProvider router={appRouter} />
